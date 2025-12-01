@@ -214,7 +214,81 @@ fn generate_html(smir: &SmirJson) -> String {
             font-weight: 600;
         }}
         .empty {{ color: var(--text-dim); font-style: italic; }}
+        .graph-section {{
+            background: var(--bg-section);
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }}
+        .graph-section summary {{
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }}
+        .graph-section summary:hover {{
+            background: rgba(255,255,255,0.05);
+        }}
+        .graph-container {{
+            padding: 1rem;
+            overflow-x: auto;
+            background: var(--bg-block);
+            border-radius: 0 0 8px 8px;
+        }}
+        .graph-container svg {{
+            width: 100%;
+            height: auto;
+            min-height: 400px;
+        }}
+        .graph-controls {{
+            padding: 0.5rem 1rem;
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }}
+        .graph-controls button {{
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }}
+        .graph-controls button:hover {{
+            background: var(--border);
+        }}
+        .source-section {{
+            background: var(--bg-section);
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }}
+        .source-section summary {{
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }}
+        .source-section summary:hover {{
+            background: rgba(255,255,255,0.05);
+        }}
+        .source-code {{
+            margin: 0;
+            padding: 1rem 1.5rem;
+            background: var(--bg-block);
+            border-radius: 0 0 8px 8px;
+            overflow-x: auto;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: var(--text);
+        }}
     </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/rust.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
 </head>
 <body>
     <h1>{}</h1>

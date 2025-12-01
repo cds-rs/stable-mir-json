@@ -3,8 +3,9 @@
 # Use nightly toolchain specified in rust-toolchain.toml
 export RUSTUP_TOOLCHAIN := ""
 
-# Default recipe
-default: build
+# Default: list available recipes
+default:
+    @just --list
 
 # Build the project
 build:
@@ -85,6 +86,116 @@ d2:
 
 # Generate all output formats
 all: html dot d2
+
+# Generate HTML with embedded SVG call graph (collapsible)
+html-graph:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p output-html
+    for rust in tests/integration/programs/*.rs; do
+        name=$(basename "${rust%.rs}")
+        echo "Generating HTML+Graph for $name..."
+        cargo run -- --html -Zno-codegen --out-dir output-html "$rust" 2>/dev/null || true
+        cargo run -- --dot -Zno-codegen --out-dir output-html "$rust" 2>/dev/null || true
+        html_file="output-html/${name}.smir.html"
+        dot_file="output-html/${name}.smir.dot"
+        if [ -f "$html_file" ] && [ -f "$dot_file" ]; then
+            svg_file=$(mktemp)
+            # Remove fixed width/height, add id for pan-zoom
+            dot -Tsvg "$dot_file" 2>/dev/null | awk '/<svg/,0' | \
+                sed 's/width="[^"]*pt" height="[^"]*pt"/id="call-graph"/' > "$svg_file"
+            # Escape HTML in source file
+            src_file=$(mktemp)
+            sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g' "$rust" > "$src_file"
+            tmp=$(mktemp)
+            awk -v svgfile="$svg_file" -v srcfile="$src_file" -v srcname="$(basename "$rust")" '
+                /<\/h1>/ {
+                    print
+                    print "    <details class=\"source-section\">"
+                    print "    <summary>Source: " srcname "</summary>"
+                    print "    <pre class=\"source-code\"><code class=\"language-rust\">"
+                    while ((getline line < srcfile) > 0) print line
+                    close(srcfile)
+                    print "    </code></pre>"
+                    print "    </details>"
+                    print "    <details class=\"graph-section\" open>"
+                    print "    <summary>Call Graph</summary>"
+                    print "    <div class=\"graph-controls\">"
+                    print "        <button onclick=\"panZoom.zoomIn()\">Zoom In</button>"
+                    print "        <button onclick=\"panZoom.zoomOut()\">Zoom Out</button>"
+                    print "        <button onclick=\"panZoom.resetZoom();panZoom.resetPan()\">Reset</button>"
+                    print "        <button onclick=\"panZoom.fit()\">Fit</button>"
+                    print "    </div>"
+                    print "    <div class=\"graph-container\">"
+                    while ((getline line < svgfile) > 0) print line
+                    close(svgfile)
+                    print "    </div>"
+                    print "    </details>"
+                    print "    <script>hljs.highlightAll(); var panZoom = svgPanZoom(\"#call-graph\", {zoomEnabled:true, controlIconsEnabled:false, fit:true, center:true, minZoom:0.1, maxZoom:20});</script>"
+                    next
+                }
+                { print }
+            ' "$html_file" > "$tmp" && mv "$tmp" "$html_file"
+            rm -f "$dot_file" "$svg_file" "$src_file"
+            echo "  -> $html_file (with graph)"
+        fi
+    done
+    # Generate index.html
+    echo "Generating index.html..."
+    ./scripts/generate-index.sh output-html
+    echo "  -> output-html/index.html"
+    echo "Done. HTML files with graphs in output-html/"
+
+# Generate HTML+Graph for a single file
+html-graph-file file:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p output-html
+    name=$(basename "{{file}}" .rs)
+    cargo run -- --html -Zno-codegen --out-dir output-html "{{file}}"
+    cargo run -- --dot -Zno-codegen --out-dir output-html "{{file}}"
+    html_file="output-html/${name}.smir.html"
+    dot_file="output-html/${name}.smir.dot"
+    if [ -f "$html_file" ] && [ -f "$dot_file" ]; then
+        svg_file=$(mktemp)
+        # Remove fixed width/height, add id for pan-zoom
+        dot -Tsvg "$dot_file" | awk '/<svg/,0' | \
+            sed 's/width="[^"]*pt" height="[^"]*pt"/id="call-graph"/' > "$svg_file"
+        # Escape HTML in source file
+        src_file=$(mktemp)
+        sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g' "{{file}}" > "$src_file"
+        tmp=$(mktemp)
+        awk -v svgfile="$svg_file" -v srcfile="$src_file" -v srcname="$(basename '{{file}}')" '
+            /<\/h1>/ {
+                print
+                print "    <details class=\"source-section\">"
+                print "    <summary>Source: " srcname "</summary>"
+                print "    <pre class=\"source-code\"><code class=\"language-rust\">"
+                while ((getline line < srcfile) > 0) print line
+                close(srcfile)
+                print "    </code></pre>"
+                print "    </details>"
+                print "    <details class=\"graph-section\" open>"
+                print "    <summary>Call Graph</summary>"
+                print "    <div class=\"graph-controls\">"
+                print "        <button onclick=\"panZoom.zoomIn()\">Zoom In</button>"
+                print "        <button onclick=\"panZoom.zoomOut()\">Zoom Out</button>"
+                print "        <button onclick=\"panZoom.resetZoom();panZoom.resetPan()\">Reset</button>"
+                print "        <button onclick=\"panZoom.fit()\">Fit</button>"
+                print "    </div>"
+                print "    <div class=\"graph-container\">"
+                while ((getline line < svgfile) > 0) print line
+                close(svgfile)
+                print "    </div>"
+                print "    </details>"
+                print "    <script>hljs.highlightAll(); var panZoom = svgPanZoom(\"#call-graph\", {zoomEnabled:true, controlIconsEnabled:false, fit:true, center:true, minZoom:0.1, maxZoom:20});</script>"
+                next
+            }
+            { print }
+        ' "$html_file" > "$tmp" && mv "$tmp" "$html_file"
+        rm -f "$dot_file" "$svg_file" "$src_file"
+        echo "Generated: $html_file (with graph)"
+    fi
 
 # List available test programs
 list-tests:
