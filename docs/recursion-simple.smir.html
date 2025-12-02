@@ -221,11 +221,130 @@
             line-height: 1.5;
             color: var(--text);
         }
+        /* Explorer panel styles */
+        .explorer-section {
+            background: var(--bg-section);
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        .explorer-section summary {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        .explorer-section summary:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        .explorer-container {
+            display: flex;
+            height: 500px;
+            border-top: 1px solid var(--border);
+        }
+        .explorer-graph {
+            flex: 1;
+            min-width: 0;
+            background: var(--bg);
+        }
+        .explorer-context {
+            width: 300px;
+            background: var(--bg-block);
+            border-left: 1px solid var(--border);
+            padding: 1rem;
+            overflow-y: auto;
+            font-size: 0.85rem;
+        }
+        .explorer-context h3 {
+            color: var(--accent);
+            font-size: 1.1rem;
+            margin: 0 0 0.5rem 0;
+            font-family: monospace;
+        }
+        .explorer-context .badge {
+            display: inline-block;
+            background: var(--bg);
+            color: var(--text-dim);
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+        }
+        .explorer-context .badge.entry { background: var(--green); color: var(--bg); }
+        .explorer-context .badge.exit { background: #bd93f9; color: var(--bg); }
+        .explorer-context .badge.branchpoint { background: #ffb86c; color: var(--bg); }
+        .explorer-context .badge.mergepoint { background: var(--accent); color: var(--bg); }
+        .explorer-context .summary { color: var(--text-dim); margin-bottom: 1rem; }
+        .explorer-context h4 {
+            color: var(--text-dim);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 1rem 0 0.5rem 0;
+        }
+        .explorer-context ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .explorer-context li {
+            padding: 0.3rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-family: monospace;
+        }
+        .explorer-context .mir { color: var(--green); }
+        .explorer-context .annotation { color: #bd93f9; font-size: 0.75rem; display: block; }
+        .explorer-context .term { color: var(--pink); }
+        .explorer-edges {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            margin-top: 0.5rem;
+        }
+        .edge-btn {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 0.8rem;
+        }
+        .edge-btn:hover { border-color: var(--accent); }
+        .edge-btn .target { color: var(--green); font-family: monospace; }
+        .edge-btn .hint { color: var(--text-dim); font-size: 0.7rem; display: block; }
+        .edge-btn.cleanup { border-color: #ff5555; border-style: dashed; }
+        .explorer-path {
+            padding: 0.5rem 1rem;
+            background: var(--bg);
+            font-family: monospace;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .explorer-path .label { color: var(--text-dim); }
+        .explorer-path .crumb { color: var(--text-dim); }
+        .explorer-path .crumb.current { color: var(--pink); font-weight: bold; }
+        .explorer-path button {
+            margin-left: auto;
+            background: var(--bg-section);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.2rem 0.6rem;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css">
     <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/rust.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+    <script src="https://unpkg.com/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
 </head>
 <body>
     <h1>recursion_simple</h1>
@@ -258,10 +377,10 @@ fn main() {
     </div>
     <div class="graph-container">
 <svg id="call-graph"
- viewBox="0.00 0.00 4022.00 1396.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ viewBox="0.00 0.00 3953.00 1396.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 1391.5)">
-<polygon fill="white" stroke="none" points="-4,4 -4,-1391.5 4018.38,-1391.5 4018.38,4 -4,4"/>
-<text xml:space="preserve" text-anchor="middle" x="2007.19" y="-7.2" font-family="Times,serif" font-size="14.00">recursion_simple</text>
+<polygon fill="white" stroke="none" points="-4,4 -4,-1391.5 3949.38,-1391.5 3949.38,4 -4,4"/>
+<text xml:space="preserve" text-anchor="middle" x="1972.69" y="-7.2" font-family="Times,serif" font-size="14.00">recursion_simple</text>
 <g id="clust1" class="cluster">
 <title>cluster_1</title>
 <polygon fill="palegreen" stroke="palegreen" points="2425.38,-32.5 2425.38,-1065.5 2773.38,-1065.5 2773.38,-32.5 2425.38,-32.5"/>
@@ -319,10 +438,10 @@ fn main() {
 </g>
 <g id="clust9" class="cluster">
 <title>cluster_17</title>
-<polygon fill="lightgray" stroke="lightgray" points="3590.38,-1207.25 3590.38,-1338.25 4006.38,-1338.25 4006.38,-1207.25 3590.38,-1207.25"/>
-<text xml:space="preserve" text-anchor="middle" x="3798.38" y="-1320.95" font-family="Times,serif" font-size="14.00">std::ptr::drop_in_place::</text>
-<text xml:space="preserve" text-anchor="middle" x="3798.38" y="-1304.45" font-family="Times,serif" font-size="14.00">&lt;{closure@std::rt::lang_s</text>
-<text xml:space="preserve" text-anchor="middle" x="3798.38" y="-1287.95" font-family="Times,serif" font-size="14.00">tart&lt;()&gt;::{closure#0}}&gt;</text>
+<polygon fill="lightgray" stroke="lightgray" points="3521.38,-1207.25 3521.38,-1338.25 3937.38,-1338.25 3937.38,-1207.25 3521.38,-1207.25"/>
+<text xml:space="preserve" text-anchor="middle" x="3729.38" y="-1320.95" font-family="Times,serif" font-size="14.00">std::ptr::drop_in_place::</text>
+<text xml:space="preserve" text-anchor="middle" x="3729.38" y="-1304.45" font-family="Times,serif" font-size="14.00">&lt;{closure@std::rt::lang_s</text>
+<text xml:space="preserve" text-anchor="middle" x="3729.38" y="-1287.95" font-family="Times,serif" font-size="14.00">tart&lt;()&gt;::{closure#0}}&gt;</text>
 </g>
 <g id="clust10" class="cluster">
 <title>cluster_19</title>
@@ -346,26 +465,26 @@ fn main() {
 <text xml:space="preserve" text-anchor="middle" x="2196.38" y="-137.2" font-family="Times,serif" font-size="14.00">Intr: </text>
 <text xml:space="preserve" text-anchor="middle" x="2196.38" y="-120.7" font-family="Times,serif" font-size="14.00">black_box</text>
 </g>
-<!-- X210a8e5fe9313c81_0 -->
+<!-- X8b0ac2e54b9a91_0 -->
 <g id="node3" class="node">
+<title>X8b0ac2e54b9a91_0</title>
+<polygon fill="none" stroke="red" points="1416.62,-1262 1360.12,-1262 1360.12,-1226 1416.62,-1226 1416.62,-1262"/>
+<text xml:space="preserve" text-anchor="middle" x="1388.38" y="-1238.95" font-family="Times,serif" font-size="14.00">NoOp: </text>
+</g>
+<!-- X210a8e5fe9313c81_0 -->
+<g id="node4" class="node">
 <title>X210a8e5fe9313c81_0</title>
 <polygon fill="none" stroke="red" points="2417.12,-512.5 2243.62,-512.5 2243.62,-471.5 2417.12,-471.5 2417.12,-512.5"/>
 <text xml:space="preserve" text-anchor="middle" x="2330.38" y="-495.2" font-family="Times,serif" font-size="14.00">_ZN4core9panicking5panic1</text>
 <text xml:space="preserve" text-anchor="middle" x="2330.38" y="-478.7" font-family="Times,serif" font-size="14.00">7h37379bf3ce79a0d7E</text>
 </g>
 <!-- X5eb86185c1cf8f06_0 -->
-<g id="node4" class="node">
+<g id="node5" class="node">
 <title>X5eb86185c1cf8f06_0</title>
 <polygon fill="none" stroke="red" points="3689.12,-1000 3521.62,-1000 3521.62,-942.5 3689.12,-942.5 3689.12,-1000"/>
 <text xml:space="preserve" text-anchor="middle" x="3605.38" y="-982.7" font-family="Times,serif" font-size="14.00">_ZN3std2rt19lang_start_in</text>
 <text xml:space="preserve" text-anchor="middle" x="3605.38" y="-966.2" font-family="Times,serif" font-size="14.00">ternal17h035df9ff6960926a</text>
 <text xml:space="preserve" text-anchor="middle" x="3605.38" y="-949.7" font-family="Times,serif" font-size="14.00">E</text>
-</g>
-<!-- X8b0ac2e54b9a91_0 -->
-<g id="node5" class="node">
-<title>X8b0ac2e54b9a91_0</title>
-<polygon fill="none" stroke="red" points="3580.62,-1262 3524.12,-1262 3524.12,-1226 3580.62,-1226 3580.62,-1262"/>
-<text xml:space="preserve" text-anchor="middle" x="3552.38" y="-1238.95" font-family="Times,serif" font-size="14.00">NoOp: </text>
 </g>
 <!-- node_2 -->
 <g id="node6" class="node">
@@ -686,15 +805,15 @@ fn main() {
 <!-- Xfa13bb62b5554aff_1 -->
 <g id="node29" class="node">
 <title>Xfa13bb62b5554aff_1</title>
-<polygon fill="none" stroke="black" points="2100.38,-311.5 2046.38,-311.5 2046.38,-275.5 2100.38,-275.5 2100.38,-311.5"/>
-<text xml:space="preserve" text-anchor="start" x="2054.38" y="-288.45" font-family="Times,serif" font-size="14.00">Call</text>
+<polygon fill="none" stroke="black" points="2121.38,-311.5 2067.38,-311.5 2067.38,-275.5 2121.38,-275.5 2121.38,-311.5"/>
+<text xml:space="preserve" text-anchor="start" x="2075.38" y="-288.45" font-family="Times,serif" font-size="14.00">Call</text>
 </g>
 <!-- Xfa13bb62b5554aff_0&#45;&gt;Xfa13bb62b5554aff_1 -->
 <g id="edge20" class="edge">
 <title>Xfa13bb62b5554aff_0&#45;&gt;Xfa13bb62b5554aff_1</title>
-<path fill="none" stroke="black" d="M2035.1,-473.56C2042.36,-439.62 2058.43,-364.41 2067.27,-323.08"/>
-<polygon fill="black" stroke="black" points="2070.67,-323.89 2069.34,-313.38 2063.83,-322.43 2070.67,-323.89"/>
-<text xml:space="preserve" text-anchor="middle" x="2049.53" y="-423.7" font-family="Times,serif" font-size="14.00">0</text>
+<path fill="none" stroke="black" d="M2036.97,-473.56C2047.87,-439.55 2072.07,-364.08 2085.3,-322.81"/>
+<polygon fill="black" stroke="black" points="2088.61,-323.93 2088.33,-313.34 2081.95,-321.79 2088.61,-323.93"/>
+<text xml:space="preserve" text-anchor="middle" x="2056.93" y="-423.7" font-family="Times,serif" font-size="14.00">0</text>
 </g>
 <!-- Xcefcd2d54e7fe3fe_0 -->
 <g id="node31" class="node">
@@ -721,22 +840,22 @@ fn main() {
 <!-- Xfa13bb62b5554aff_1&#45;&gt;X3c6542d96320ad67_0 -->
 <g id="edge23" class="edge">
 <title>Xfa13bb62b5554aff_1&#45;&gt;X3c6542d96320ad67_0</title>
-<path fill="none" stroke="black" d="M2087.01,-275.04C2108.07,-248.07 2148.74,-196 2174.11,-163.51"/>
-<polygon fill="black" stroke="black" points="2176.82,-165.73 2180.21,-155.7 2171.3,-161.42 2176.82,-165.73"/>
-<text xml:space="preserve" text-anchor="middle" x="2187.28" y="-175.7" font-family="Times,serif" font-size="14.00">const ()</text>
+<path fill="none" stroke="black" d="M2105.68,-275.04C2123.07,-248.19 2156.58,-196.44 2177.64,-163.93"/>
+<polygon fill="black" stroke="black" points="2180.42,-166.07 2182.92,-155.77 2174.55,-162.26 2180.42,-166.07"/>
+<text xml:space="preserve" text-anchor="middle" x="2192.35" y="-175.7" font-family="Times,serif" font-size="14.00">const ()</text>
 </g>
 <!-- Xfa13bb62b5554aff_2 -->
 <g id="node30" class="node">
 <title>Xfa13bb62b5554aff_2</title>
-<polygon fill="none" stroke="black" points="2100.38,-152 2046.38,-152 2046.38,-116 2100.38,-116 2100.38,-152"/>
-<text xml:space="preserve" text-anchor="start" x="2054.38" y="-128.95" font-family="Times,serif" font-size="14.00">Return</text>
+<polygon fill="none" stroke="black" points="2121.38,-152 2067.38,-152 2067.38,-116 2121.38,-116 2121.38,-152"/>
+<text xml:space="preserve" text-anchor="start" x="2075.38" y="-128.95" font-family="Times,serif" font-size="14.00">Return</text>
 </g>
 <!-- Xfa13bb62b5554aff_1&#45;&gt;Xfa13bb62b5554aff_2 -->
 <g id="edge21" class="edge">
 <title>Xfa13bb62b5554aff_1&#45;&gt;Xfa13bb62b5554aff_2</title>
-<path fill="none" stroke="black" d="M2073.38,-275.04C2073.38,-248.06 2073.38,-195.94 2073.38,-163.45"/>
-<polygon fill="black" stroke="black" points="2076.88,-163.57 2073.38,-153.57 2069.88,-163.57 2076.88,-163.57"/>
-<text xml:space="preserve" text-anchor="middle" x="2076.75" y="-175.7" font-family="Times,serif" font-size="14.00">2</text>
+<path fill="none" stroke="black" d="M2094.38,-275.04C2094.38,-248.06 2094.38,-195.94 2094.38,-163.45"/>
+<polygon fill="black" stroke="black" points="2097.88,-163.57 2094.38,-153.57 2090.88,-163.57 2097.88,-163.57"/>
+<text xml:space="preserve" text-anchor="middle" x="2097.75" y="-175.7" font-family="Times,serif" font-size="14.00">2</text>
 </g>
 <!-- Xcefcd2d54e7fe3fe_0&#45;&gt;Xcefcd2d54e7fe3fe_0 -->
 <g id="edge32" class="edge">
@@ -878,16 +997,16 @@ fn main() {
 <!-- node_18 -->
 <g id="node43" class="node">
 <title>node_18</title>
-<polygon fill="#7ccd7c" stroke="#7ccd7c" points="3926,-1272.75 3598.75,-1272.75 3598.75,-1215.25 3926,-1215.25 3926,-1272.75"/>
-<text xml:space="preserve" text-anchor="start" x="3606.75" y="-1255.45" font-family="Times,serif" font-size="14.00">LOCALS</text>
-<text xml:space="preserve" text-anchor="start" x="3606.75" y="-1238.95" font-family="Times,serif" font-size="14.00">0 = ()</text>
-<text xml:space="preserve" text-anchor="start" x="3606.75" y="-1222.45" font-family="Times,serif" font-size="14.00">1 = *mut {closure@std::rt::lang_start&lt;()&gt;::{closure#0}}</text>
+<polygon fill="#7ccd7c" stroke="#7ccd7c" points="3857,-1272.75 3529.75,-1272.75 3529.75,-1215.25 3857,-1215.25 3857,-1272.75"/>
+<text xml:space="preserve" text-anchor="start" x="3537.75" y="-1255.45" font-family="Times,serif" font-size="14.00">LOCALS</text>
+<text xml:space="preserve" text-anchor="start" x="3537.75" y="-1238.95" font-family="Times,serif" font-size="14.00">0 = ()</text>
+<text xml:space="preserve" text-anchor="start" x="3537.75" y="-1222.45" font-family="Times,serif" font-size="14.00">1 = *mut {closure@std::rt::lang_start&lt;()&gt;::{closure#0}}</text>
 </g>
 <!-- Xd31bbdb4fbe295b_0 -->
 <g id="node44" class="node">
 <title>Xd31bbdb4fbe295b_0</title>
-<polygon fill="none" stroke="black" points="3998.38,-1262 3944.38,-1262 3944.38,-1226 3998.38,-1226 3998.38,-1262"/>
-<text xml:space="preserve" text-anchor="start" x="3952.38" y="-1238.95" font-family="Times,serif" font-size="14.00">Return</text>
+<polygon fill="none" stroke="black" points="3929.38,-1262 3875.38,-1262 3875.38,-1226 3929.38,-1226 3929.38,-1262"/>
+<text xml:space="preserve" text-anchor="start" x="3883.38" y="-1238.95" font-family="Times,serif" font-size="14.00">Return</text>
 </g>
 <!-- node_20 -->
 <g id="node45" class="node">
@@ -942,6 +1061,46 @@ fn main() {
     <section class="function">
     <h2>sum_to_n_rec</h2>
     <p class="fn-meta">7 basic blocks — <code>sum_to_n_rec</code></p>
+    <details class="explorer-section">
+        <summary>Interactive Graph Explorer</summary>
+        <div class="explorer-path" id="path-sum_to_n_rec">
+            <span class="label">PATH:</span>
+            <span class="breadcrumb"></span>
+            <button onclick="explorers['sum_to_n_rec'].reset()">Reset</button>
+            <button onclick="explorers['sum_to_n_rec'].goBack()">← Back</button>
+        </div>
+        <div class="explorer-container">
+            <div class="explorer-graph" id="cy-sum_to_n_rec"></div>
+            <div class="explorer-context" id="ctx-sum_to_n_rec">
+                <h3 id="block-sum_to_n_rec">bb0</h3>
+                <span class="badge" id="role-sum_to_n_rec">entry</span>
+                <div class="summary" id="summary-sum_to_n_rec"></div>
+                <h4>Statements</h4>
+                <ul id="stmts-sum_to_n_rec"></ul>
+                <h4>Terminator</h4>
+                <div id="term-sum_to_n_rec"></div>
+                <h4>Next</h4>
+                <div class="explorer-edges" id="edges-sum_to_n_rec"></div>
+            </div>
+        </div>
+        <script>
+            (function() {
+                const data = {"name":"sum_to_n_rec","short_name":"sum_to_n_rec","blocks":[{"id":0,"statements":[],"terminator":{"kind":"switch","mir":"switchInt(_1)","annotation":"Branch based on value of _1","edges":[{"target":1,"label":"0","kind":"branch","annotation":"If _1 == 0"},{"target":2,"label":"else","kind":"otherwise","annotation":"Otherwise (no match)"}]},"predecessors":[],"role":"entry","summary":"Entry point"},{"id":1,"statements":[{"mir":"_0 = 0","annotation":"Load constant"}],"terminator":{"kind":"goto","mir":"goto bb6","annotation":"Continue to next block","edges":[{"target":6,"label":"","kind":"normal","annotation":"Continue"}]},"predecessors":[0],"role":"linear","summary":"Load constant"},{"id":2,"statements":[{"mir":"_4 = _1 - 1","annotation":"Checked Subtract (may panic)"}],"terminator":{"kind":"assert","mir":"assert(move _4.1 == false)","annotation":"Panic if move _4.1 is true","edges":[{"target":3,"label":"ok","kind":"normal","annotation":"Assertion passed"}]},"predecessors":[0],"role":"linear","summary":"Checked Subtract (may panic)"},{"id":3,"statements":[{"mir":"_3 = move _4.0","annotation":"Move value"}],"terminator":{"kind":"call","mir":"_2 = sum_to_n_rec(move _3)","annotation":"RECURSIVE call to sum_to_n_rec","edges":[{"target":4,"label":"return","kind":"normal","annotation":"After sum_to_n_rec returns"}]},"predecessors":[2],"role":"linear","summary":"Move value"},{"id":4,"statements":[{"mir":"_5 = _1 + _2","annotation":"Checked Add (may panic)"}],"terminator":{"kind":"assert","mir":"assert(move _5.1 == false)","annotation":"Panic if move _5.1 is true","edges":[{"target":5,"label":"ok","kind":"normal","annotation":"Assertion passed"}]},"predecessors":[3],"role":"linear","summary":"Checked Add (may panic)"},{"id":5,"statements":[{"mir":"_0 = move _5.0","annotation":"Move value"}],"terminator":{"kind":"goto","mir":"goto bb6","annotation":"Continue to next block","edges":[{"target":6,"label":"","kind":"normal","annotation":"Continue"}]},"predecessors":[4],"role":"linear","summary":"Move value"},{"id":6,"statements":[],"terminator":{"kind":"return","mir":"return","annotation":"Return from function","edges":[]},"predecessors":[1,5],"role":"exit","summary":"Function returns"}],"locals":["_0: u32","_1: u32","_2: u32","_3: u32","_4: (u32, bool)","_5: (u32, bool)"],"entry_block":0};
+                if (typeof explorers === 'undefined') window.explorers = {};
+
+                // Wait for details to open before initializing
+                const details = document.currentScript.closest('details');
+                let initialized = false;
+
+                details.addEventListener('toggle', function() {
+                    if (details.open && !initialized) {
+                        initialized = true;
+                        setTimeout(() => initExplorer('sum_to_n_rec', data), 50);
+                    }
+                });
+            })();
+        </script>
+    </details>
     <div class="block">
         <div class="block-header">bb0</div>
         <table class="annotated-table">
@@ -1076,6 +1235,46 @@ fn main() {
 <section class="function">
     <h2>main</h2>
     <p class="fn-meta">4 basic blocks — <code>main</code></p>
+    <details class="explorer-section">
+        <summary>Interactive Graph Explorer</summary>
+        <div class="explorer-path" id="path-main">
+            <span class="label">PATH:</span>
+            <span class="breadcrumb"></span>
+            <button onclick="explorers['main'].reset()">Reset</button>
+            <button onclick="explorers['main'].goBack()">← Back</button>
+        </div>
+        <div class="explorer-container">
+            <div class="explorer-graph" id="cy-main"></div>
+            <div class="explorer-context" id="ctx-main">
+                <h3 id="block-main">bb0</h3>
+                <span class="badge" id="role-main">entry</span>
+                <div class="summary" id="summary-main"></div>
+                <h4>Statements</h4>
+                <ul id="stmts-main"></ul>
+                <h4>Terminator</h4>
+                <div id="term-main"></div>
+                <h4>Next</h4>
+                <div class="explorer-edges" id="edges-main"></div>
+            </div>
+        </div>
+        <script>
+            (function() {
+                const data = {"name":"main","short_name":"main","blocks":[{"id":0,"statements":[],"terminator":{"kind":"call","mir":"_1 = sum_to_n_rec(10)","annotation":"Call sum_to_n_rec","edges":[{"target":1,"label":"return","kind":"normal","annotation":"After sum_to_n_rec returns"}]},"predecessors":[],"role":"entry","summary":"Entry point"},{"id":1,"statements":[],"terminator":{"kind":"switch","mir":"switchInt(_1)","annotation":"Branch based on value of _1","edges":[{"target":2,"label":"55","kind":"branch","annotation":"If _1 == 55"},{"target":3,"label":"else","kind":"otherwise","annotation":"Otherwise (no match)"}]},"predecessors":[0],"role":"branchpoint","summary":"Branches: Branch based on value of _1"},{"id":2,"statements":[],"terminator":{"kind":"return","mir":"return","annotation":"Return from function","edges":[]},"predecessors":[1],"role":"exit","summary":"Function returns"},{"id":3,"statements":[],"terminator":{"kind":"call","mir":"_2 = panic([16 bytes])","annotation":"Call panic","edges":[]},"predecessors":[1],"role":"linear","summary":"Call panic"}],"locals":["_0: ()","_1: u32","_2: !"],"entry_block":0};
+                if (typeof explorers === 'undefined') window.explorers = {};
+
+                // Wait for details to open before initializing
+                const details = document.currentScript.closest('details');
+                let initialized = false;
+
+                details.addEventListener('toggle', function() {
+                    if (details.open && !initialized) {
+                        initialized = true;
+                        setTimeout(() => initExplorer('main', data), 50);
+                    }
+                });
+            })();
+        </script>
+    </details>
     <div class="block">
         <div class="block-header">bb0</div>
         <table class="annotated-table">
@@ -1138,5 +1337,174 @@ fn main() {
     </div>
 </section>
 
+    <script>
+    
+function initExplorer(id, data) {
+    const cy = cytoscape({
+        container: document.getElementById('cy-' + id),
+        elements: buildElements(data),
+        style: [
+            { selector: 'node', style: {
+                'label': 'data(label)',
+                'text-valign': 'center',
+                'text-halign': 'center',
+                'background-color': '#3a3a5e',
+                'color': '#eee',
+                'font-size': '11px',
+                'font-family': 'monospace',
+                'width': 50,
+                'height': 30,
+                'shape': 'roundrectangle',
+                'border-width': 2,
+                'border-color': '#555'
+            }},
+            { selector: 'node.entry', style: { 'border-color': '#50fa7b', 'border-width': 3 }},
+            { selector: 'node.exit', style: { 'border-color': '#bd93f9', 'border-width': 3 }},
+            { selector: 'node.branchpoint', style: { 'border-color': '#ffb86c', 'border-width': 3 }},
+            { selector: 'node.visited', style: { 'background-color': '#2a4a6e' }},
+            { selector: 'node.current', style: {
+                'background-color': '#50fa7b',
+                'color': '#1a1a2e',
+                'border-color': '#50fa7b',
+                'font-weight': 'bold'
+            }},
+            { selector: 'node.dim', style: { 'opacity': 0.35 }},
+            { selector: 'edge', style: {
+                'width': 2,
+                'line-color': '#555',
+                'target-arrow-color': '#555',
+                'target-arrow-shape': 'triangle',
+                'curve-style': 'bezier',
+                'label': 'data(label)',
+                'font-size': '9px',
+                'color': '#888'
+            }},
+            { selector: 'edge.cleanup', style: {
+                'line-style': 'dashed',
+                'line-color': '#ff5555',
+                'target-arrow-color': '#ff5555'
+            }},
+            { selector: 'edge.taken', style: {
+                'line-color': '#50fa7b',
+                'target-arrow-color': '#50fa7b',
+                'width': 3
+            }}
+        ],
+        layout: { name: 'breadthfirst', directed: true, padding: 30, spacingFactor: 1.2 }
+    });
+
+    const state = { path: [], current: null, data: data, cy: cy, id: id };
+    explorers[id] = {
+        goTo: (blockId) => goToBlock(state, blockId),
+        goBack: () => goBack(state),
+        reset: () => resetExplorer(state)
+    };
+
+    cy.on('tap', 'node', (e) => goToBlock(state, parseInt(e.target.id().replace('bb', ''))));
+    cy.on('tap', 'edge', (e) => goToBlock(state, parseInt(e.target.target().id().replace('bb', ''))));
+
+    goToBlock(state, data.entry_block);
+}
+
+function buildElements(data) {
+    const nodes = data.blocks.map(b => ({
+        data: { id: 'bb' + b.id, label: 'bb' + b.id },
+        classes: b.role
+    }));
+    const edges = [];
+    for (const block of data.blocks) {
+        for (const edge of block.terminator.edges) {
+            edges.push({
+                data: { id: 'bb' + block.id + '-bb' + edge.target, source: 'bb' + block.id, target: 'bb' + edge.target, label: edge.label },
+                classes: edge.kind === 'cleanup' ? 'cleanup' : ''
+            });
+        }
+    }
+    return { nodes, edges };
+}
+
+function goToBlock(state, blockId) {
+    const { data, cy, id } = state;
+    if (blockId < 0 || blockId >= data.blocks.length) return;
+    const block = data.blocks[blockId];
+
+    if (state.current !== null && state.current !== blockId) {
+        if (state.path[state.path.length - 1] !== state.current) {
+            state.path.push(state.current);
+        }
+    }
+    state.current = blockId;
+
+    cy.nodes().removeClass('current visited dim');
+    cy.edges().removeClass('taken');
+    const visited = new Set([...state.path, blockId]);
+    state.path.forEach(v => cy.$('#bb' + v).addClass('visited'));
+    cy.$('#bb' + blockId).addClass('current');
+    cy.nodes().forEach(n => {
+        if (!visited.has(parseInt(n.id().replace('bb', '')))) n.addClass('dim');
+    });
+    for (let i = 0; i < state.path.length; i++) {
+        const from = state.path[i], to = i + 1 < state.path.length ? state.path[i + 1] : blockId;
+        cy.$('#bb' + from + '-bb' + to).addClass('taken');
+    }
+    cy.animate({ center: { eles: cy.$('#bb' + blockId) }, duration: 150 });
+
+    updateContext(state, block);
+    updatePath(state);
+}
+
+function goBack(state) {
+    if (state.path.length > 0) {
+        const prev = state.path.pop();
+        state.current = null;
+        goToBlock(state, prev);
+    }
+}
+
+function resetExplorer(state) {
+    state.path = [];
+    state.current = null;
+    state.cy.nodes().removeClass('current visited dim');
+    state.cy.edges().removeClass('taken');
+    goToBlock(state, state.data.entry_block);
+}
+
+function updateContext(state, block) {
+    const { id } = state;
+    document.getElementById('block-' + id).textContent = 'bb' + block.id;
+    const badge = document.getElementById('role-' + id);
+    badge.textContent = block.role;
+    badge.className = 'badge ' + block.role;
+    document.getElementById('summary-' + id).textContent = block.summary;
+
+    const stmts = document.getElementById('stmts-' + id);
+    stmts.innerHTML = block.statements.length === 0 ? '<li style="color:#888">(none)</li>' :
+        block.statements.map(s => '<li><span class="mir">' + esc(s.mir) + '</span><span class="annotation">' + esc(s.annotation) + '</span></li>').join('');
+
+    document.getElementById('term-' + id).innerHTML =
+        '<span class="term">' + esc(block.terminator.mir) + '</span><span class="annotation">' + esc(block.terminator.annotation) + '</span>';
+
+    const edges = document.getElementById('edges-' + id);
+    edges.innerHTML = block.terminator.edges.map(e =>
+        '<button class="edge-btn' + (e.kind === 'cleanup' ? ' cleanup' : '') + '" onclick="explorers[\'' + id + '\'].goTo(' + e.target + ')">' +
+        '<span class="target">→ bb' + e.target + '</span> ' + (e.label ? '<span class="label">' + esc(e.label) + '</span>' : '') +
+        '<span class="hint">' + esc(e.annotation) + '</span></button>'
+    ).join('');
+}
+
+function updatePath(state) {
+    const crumb = document.querySelector('#path-' + state.id + ' .breadcrumb');
+    const full = [...state.path, state.current];
+    crumb.innerHTML = full.map((b, i) =>
+        '<span class="crumb' + (i === full.length - 1 ? ' current' : '') + '">bb' + b + '</span>'
+    ).join(' → ');
+}
+
+function esc(s) {
+    if (!s) return '';
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+    </script>
 </body>
 </html>

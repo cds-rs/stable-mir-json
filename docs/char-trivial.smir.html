@@ -221,11 +221,130 @@
             line-height: 1.5;
             color: var(--text);
         }
+        /* Explorer panel styles */
+        .explorer-section {
+            background: var(--bg-section);
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        .explorer-section summary {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        .explorer-section summary:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        .explorer-container {
+            display: flex;
+            height: 500px;
+            border-top: 1px solid var(--border);
+        }
+        .explorer-graph {
+            flex: 1;
+            min-width: 0;
+            background: var(--bg);
+        }
+        .explorer-context {
+            width: 300px;
+            background: var(--bg-block);
+            border-left: 1px solid var(--border);
+            padding: 1rem;
+            overflow-y: auto;
+            font-size: 0.85rem;
+        }
+        .explorer-context h3 {
+            color: var(--accent);
+            font-size: 1.1rem;
+            margin: 0 0 0.5rem 0;
+            font-family: monospace;
+        }
+        .explorer-context .badge {
+            display: inline-block;
+            background: var(--bg);
+            color: var(--text-dim);
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+        }
+        .explorer-context .badge.entry { background: var(--green); color: var(--bg); }
+        .explorer-context .badge.exit { background: #bd93f9; color: var(--bg); }
+        .explorer-context .badge.branchpoint { background: #ffb86c; color: var(--bg); }
+        .explorer-context .badge.mergepoint { background: var(--accent); color: var(--bg); }
+        .explorer-context .summary { color: var(--text-dim); margin-bottom: 1rem; }
+        .explorer-context h4 {
+            color: var(--text-dim);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 1rem 0 0.5rem 0;
+        }
+        .explorer-context ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .explorer-context li {
+            padding: 0.3rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-family: monospace;
+        }
+        .explorer-context .mir { color: var(--green); }
+        .explorer-context .annotation { color: #bd93f9; font-size: 0.75rem; display: block; }
+        .explorer-context .term { color: var(--pink); }
+        .explorer-edges {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            margin-top: 0.5rem;
+        }
+        .edge-btn {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 0.8rem;
+        }
+        .edge-btn:hover { border-color: var(--accent); }
+        .edge-btn .target { color: var(--green); font-family: monospace; }
+        .edge-btn .hint { color: var(--text-dim); font-size: 0.7rem; display: block; }
+        .edge-btn.cleanup { border-color: #ff5555; border-style: dashed; }
+        .explorer-path {
+            padding: 0.5rem 1rem;
+            background: var(--bg);
+            font-family: monospace;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .explorer-path .label { color: var(--text-dim); }
+        .explorer-path .crumb { color: var(--text-dim); }
+        .explorer-path .crumb.current { color: var(--pink); font-weight: bold; }
+        .explorer-path button {
+            margin-left: auto;
+            background: var(--bg-section);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.2rem 0.6rem;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css">
     <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/rust.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+    <script src="https://unpkg.com/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
 </head>
 <body>
     <h1>char_trivial</h1>
@@ -250,14 +369,14 @@ fn main() {
     </div>
     <div class="graph-container">
 <svg id="call-graph"
- viewBox="0.00 0.00 3741.00 1279.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ viewBox="0.00 0.00 3411.00 1279.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 1275)">
-<polygon fill="white" stroke="none" points="-4,4 -4,-1275 3737.38,-1275 3737.38,4 -4,4"/>
-<text xml:space="preserve" text-anchor="middle" x="1866.69" y="-7.2" font-family="Times,serif" font-size="14.00">char_trivial</text>
+<polygon fill="white" stroke="none" points="-4,4 -4,-1275 3407.38,-1275 3407.38,4 -4,4"/>
+<text xml:space="preserve" text-anchor="middle" x="1701.69" y="-7.2" font-family="Times,serif" font-size="14.00">char_trivial</text>
 <g id="clust1" class="cluster">
 <title>cluster_1</title>
-<polygon fill="palegreen" stroke="palegreen" points="1118.38,-828.75 1118.38,-1197 1372.38,-1197 1372.38,-828.75 1118.38,-828.75"/>
-<text xml:space="preserve" text-anchor="middle" x="1245.38" y="-1179.7" font-family="Times,serif" font-size="14.00">main</text>
+<polygon fill="palegreen" stroke="palegreen" points="2485.38,-828.75 2485.38,-1197 2739.38,-1197 2739.38,-828.75 2485.38,-828.75"/>
+<text xml:space="preserve" text-anchor="middle" x="2612.38" y="-1179.7" font-family="Times,serif" font-size="14.00">main</text>
 </g>
 <g id="clust2" class="cluster">
 <title>cluster_3</title>
@@ -266,58 +385,58 @@ fn main() {
 </g>
 <g id="clust3" class="cluster">
 <title>cluster_5</title>
-<polygon fill="lightgray" stroke="lightgray" points="2332.38,-123.5 2332.38,-767 2850.38,-767 2850.38,-123.5 2332.38,-123.5"/>
-<text xml:space="preserve" text-anchor="middle" x="2591.38" y="-749.7" font-family="Times,serif" font-size="14.00">std::rt::lang_start::&lt;()&gt;</text>
-<text xml:space="preserve" text-anchor="middle" x="2591.38" y="-733.2" font-family="Times,serif" font-size="14.00">::{closure#0}</text>
+<polygon fill="lightgray" stroke="lightgray" points="2002.38,-123.5 2002.38,-767 2520.38,-767 2520.38,-123.5 2002.38,-123.5"/>
+<text xml:space="preserve" text-anchor="middle" x="2261.38" y="-749.7" font-family="Times,serif" font-size="14.00">std::rt::lang_start::&lt;()&gt;</text>
+<text xml:space="preserve" text-anchor="middle" x="2261.38" y="-733.2" font-family="Times,serif" font-size="14.00">::{closure#0}</text>
 </g>
 <g id="clust4" class="cluster">
 <title>cluster_7</title>
-<polygon fill="lightgray" stroke="lightgray" points="3302.38,-32.5 3302.38,-535.5 3460.38,-535.5 3460.38,-32.5 3302.38,-32.5"/>
-<text xml:space="preserve" text-anchor="middle" x="3381.38" y="-518.2" font-family="Times,serif" font-size="14.00">std::sys::backtrace::__ru</text>
-<text xml:space="preserve" text-anchor="middle" x="3381.38" y="-501.7" font-family="Times,serif" font-size="14.00">st_begin_short_backtrace:</text>
-<text xml:space="preserve" text-anchor="middle" x="3381.38" y="-485.2" font-family="Times,serif" font-size="14.00">:&lt;fn(), </text>
-<text xml:space="preserve" text-anchor="middle" x="3381.38" y="-468.7" font-family="Times,serif" font-size="14.00">()&gt;</text>
+<polygon fill="lightgray" stroke="lightgray" points="2972.38,-32.5 2972.38,-535.5 3130.38,-535.5 3130.38,-32.5 2972.38,-32.5"/>
+<text xml:space="preserve" text-anchor="middle" x="3051.38" y="-518.2" font-family="Times,serif" font-size="14.00">std::sys::backtrace::__ru</text>
+<text xml:space="preserve" text-anchor="middle" x="3051.38" y="-501.7" font-family="Times,serif" font-size="14.00">st_begin_short_backtrace:</text>
+<text xml:space="preserve" text-anchor="middle" x="3051.38" y="-485.2" font-family="Times,serif" font-size="14.00">:&lt;fn(), </text>
+<text xml:space="preserve" text-anchor="middle" x="3051.38" y="-468.7" font-family="Times,serif" font-size="14.00">()&gt;</text>
 </g>
 <g id="clust5" class="cluster">
 <title>cluster_9</title>
-<polygon fill="lightgray" stroke="lightgray" points="1448.38,-828.75 1448.38,-1263 1864.38,-1263 1864.38,-828.75 1448.38,-828.75"/>
-<text xml:space="preserve" text-anchor="middle" x="1656.38" y="-1245.7" font-family="Times,serif" font-size="14.00">&lt;{closure@std::rt::lang_s</text>
-<text xml:space="preserve" text-anchor="middle" x="1656.38" y="-1229.2" font-family="Times,serif" font-size="14.00">tart&lt;()&gt;::{closure#0}} </text>
-<text xml:space="preserve" text-anchor="middle" x="1656.38" y="-1212.7" font-family="Times,serif" font-size="14.00">as </text>
-<text xml:space="preserve" text-anchor="middle" x="1656.38" y="-1196.2" font-family="Times,serif" font-size="14.00">std::ops::FnOnce&lt;()&gt;&gt;::ca</text>
-<text xml:space="preserve" text-anchor="middle" x="1656.38" y="-1179.7" font-family="Times,serif" font-size="14.00">ll_once</text>
+<polygon fill="lightgray" stroke="lightgray" points="1118.38,-828.75 1118.38,-1263 1534.38,-1263 1534.38,-828.75 1118.38,-828.75"/>
+<text xml:space="preserve" text-anchor="middle" x="1326.38" y="-1245.7" font-family="Times,serif" font-size="14.00">&lt;{closure@std::rt::lang_s</text>
+<text xml:space="preserve" text-anchor="middle" x="1326.38" y="-1229.2" font-family="Times,serif" font-size="14.00">tart&lt;()&gt;::{closure#0}} </text>
+<text xml:space="preserve" text-anchor="middle" x="1326.38" y="-1212.7" font-family="Times,serif" font-size="14.00">as </text>
+<text xml:space="preserve" text-anchor="middle" x="1326.38" y="-1196.2" font-family="Times,serif" font-size="14.00">std::ops::FnOnce&lt;()&gt;&gt;::ca</text>
+<text xml:space="preserve" text-anchor="middle" x="1326.38" y="-1179.7" font-family="Times,serif" font-size="14.00">ll_once</text>
 </g>
 <g id="clust6" class="cluster">
 <title>cluster_11</title>
-<polygon fill="lightgray" stroke="lightgray" points="3551.38,-32.5 3551.38,-337 3725.38,-337 3725.38,-32.5 3551.38,-32.5"/>
-<text xml:space="preserve" text-anchor="middle" x="3638.38" y="-319.7" font-family="Times,serif" font-size="14.00">&lt;fn() </text>
-<text xml:space="preserve" text-anchor="middle" x="3638.38" y="-303.2" font-family="Times,serif" font-size="14.00">as </text>
-<text xml:space="preserve" text-anchor="middle" x="3638.38" y="-286.7" font-family="Times,serif" font-size="14.00">std::ops::FnOnce&lt;()&gt;&gt;::ca</text>
-<text xml:space="preserve" text-anchor="middle" x="3638.38" y="-270.2" font-family="Times,serif" font-size="14.00">ll_once</text>
+<polygon fill="lightgray" stroke="lightgray" points="3221.38,-32.5 3221.38,-337 3395.38,-337 3395.38,-32.5 3221.38,-32.5"/>
+<text xml:space="preserve" text-anchor="middle" x="3308.38" y="-319.7" font-family="Times,serif" font-size="14.00">&lt;fn() </text>
+<text xml:space="preserve" text-anchor="middle" x="3308.38" y="-303.2" font-family="Times,serif" font-size="14.00">as </text>
+<text xml:space="preserve" text-anchor="middle" x="3308.38" y="-286.7" font-family="Times,serif" font-size="14.00">std::ops::FnOnce&lt;()&gt;&gt;::ca</text>
+<text xml:space="preserve" text-anchor="middle" x="3308.38" y="-270.2" font-family="Times,serif" font-size="14.00">ll_once</text>
 </g>
 <g id="clust7" class="cluster">
 <title>cluster_13</title>
-<polygon fill="lightgray" stroke="lightgray" points="1872.38,-390.5 1872.38,-998.5 2324.38,-998.5 2324.38,-390.5 1872.38,-390.5"/>
-<text xml:space="preserve" text-anchor="middle" x="2098.38" y="-981.2" font-family="Times,serif" font-size="14.00">&lt;{closure@std::rt::lang_s</text>
-<text xml:space="preserve" text-anchor="middle" x="2098.38" y="-964.7" font-family="Times,serif" font-size="14.00">tart&lt;()&gt;::{closure#0}} </text>
-<text xml:space="preserve" text-anchor="middle" x="2098.38" y="-948.2" font-family="Times,serif" font-size="14.00">as </text>
-<text xml:space="preserve" text-anchor="middle" x="2098.38" y="-931.7" font-family="Times,serif" font-size="14.00">std::ops::FnOnce&lt;()&gt;&gt;::ca</text>
-<text xml:space="preserve" text-anchor="middle" x="2098.38" y="-915.2" font-family="Times,serif" font-size="14.00">ll_once</text>
+<polygon fill="lightgray" stroke="lightgray" points="1542.38,-390.5 1542.38,-998.5 1994.38,-998.5 1994.38,-390.5 1542.38,-390.5"/>
+<text xml:space="preserve" text-anchor="middle" x="1768.38" y="-981.2" font-family="Times,serif" font-size="14.00">&lt;{closure@std::rt::lang_s</text>
+<text xml:space="preserve" text-anchor="middle" x="1768.38" y="-964.7" font-family="Times,serif" font-size="14.00">tart&lt;()&gt;::{closure#0}} </text>
+<text xml:space="preserve" text-anchor="middle" x="1768.38" y="-948.2" font-family="Times,serif" font-size="14.00">as </text>
+<text xml:space="preserve" text-anchor="middle" x="1768.38" y="-931.7" font-family="Times,serif" font-size="14.00">std::ops::FnOnce&lt;()&gt;&gt;::ca</text>
+<text xml:space="preserve" text-anchor="middle" x="1768.38" y="-915.2" font-family="Times,serif" font-size="14.00">ll_once</text>
 </g>
 <g id="clust8" class="cluster">
 <title>cluster_15</title>
-<polygon fill="lightgray" stroke="lightgray" points="2590.38,-1090.75 2590.38,-1221.75 3006.38,-1221.75 3006.38,-1090.75 2590.38,-1090.75"/>
-<text xml:space="preserve" text-anchor="middle" x="2798.38" y="-1204.45" font-family="Times,serif" font-size="14.00">std::ptr::drop_in_place::</text>
-<text xml:space="preserve" text-anchor="middle" x="2798.38" y="-1187.95" font-family="Times,serif" font-size="14.00">&lt;{closure@std::rt::lang_s</text>
-<text xml:space="preserve" text-anchor="middle" x="2798.38" y="-1171.45" font-family="Times,serif" font-size="14.00">tart&lt;()&gt;::{closure#0}}&gt;</text>
+<polygon fill="lightgray" stroke="lightgray" points="2899.38,-1090.75 2899.38,-1221.75 3315.38,-1221.75 3315.38,-1090.75 2899.38,-1090.75"/>
+<text xml:space="preserve" text-anchor="middle" x="3107.38" y="-1204.45" font-family="Times,serif" font-size="14.00">std::ptr::drop_in_place::</text>
+<text xml:space="preserve" text-anchor="middle" x="3107.38" y="-1187.95" font-family="Times,serif" font-size="14.00">&lt;{closure@std::rt::lang_s</text>
+<text xml:space="preserve" text-anchor="middle" x="3107.38" y="-1171.45" font-family="Times,serif" font-size="14.00">tart&lt;()&gt;::{closure#0}}&gt;</text>
 </g>
 <g id="clust9" class="cluster">
 <title>cluster_17</title>
-<polygon fill="lightgray" stroke="lightgray" points="2858.38,-181.25 2858.38,-328.75 3294.38,-328.75 3294.38,-181.25 2858.38,-181.25"/>
-<text xml:space="preserve" text-anchor="middle" x="3076.38" y="-311.45" font-family="Times,serif" font-size="14.00">&lt;() </text>
-<text xml:space="preserve" text-anchor="middle" x="3076.38" y="-294.95" font-family="Times,serif" font-size="14.00">as </text>
-<text xml:space="preserve" text-anchor="middle" x="3076.38" y="-278.45" font-family="Times,serif" font-size="14.00">std::process::Termination</text>
-<text xml:space="preserve" text-anchor="middle" x="3076.38" y="-261.95" font-family="Times,serif" font-size="14.00">&gt;::report</text>
+<polygon fill="lightgray" stroke="lightgray" points="2528.38,-181.25 2528.38,-328.75 2964.38,-328.75 2964.38,-181.25 2528.38,-181.25"/>
+<text xml:space="preserve" text-anchor="middle" x="2746.38" y="-311.45" font-family="Times,serif" font-size="14.00">&lt;() </text>
+<text xml:space="preserve" text-anchor="middle" x="2746.38" y="-294.95" font-family="Times,serif" font-size="14.00">as </text>
+<text xml:space="preserve" text-anchor="middle" x="2746.38" y="-278.45" font-family="Times,serif" font-size="14.00">std::process::Termination</text>
+<text xml:space="preserve" text-anchor="middle" x="2746.38" y="-261.95" font-family="Times,serif" font-size="14.00">&gt;::report</text>
 </g>
 <!-- node_0 -->
 <g id="node1" class="node">
@@ -334,74 +453,74 @@ fn main() {
 <text xml:space="preserve" text-anchor="middle" x="964.38" y="-849.7" font-family="Times,serif" font-size="14.00">ternal17h035df9ff6960926a</text>
 <text xml:space="preserve" text-anchor="middle" x="964.38" y="-833.2" font-family="Times,serif" font-size="14.00">E</text>
 </g>
-<!-- X210a8e5fe9313c81_0 -->
+<!-- X3c6542d96320ad67_0 -->
 <g id="node3" class="node">
-<title>X210a8e5fe9313c81_0</title>
-<polygon fill="none" stroke="red" points="1404.12,-668.5 1230.62,-668.5 1230.62,-627.5 1404.12,-627.5 1404.12,-668.5"/>
-<text xml:space="preserve" text-anchor="middle" x="1317.38" y="-651.2" font-family="Times,serif" font-size="14.00">_ZN4core9panicking5panic1</text>
-<text xml:space="preserve" text-anchor="middle" x="1317.38" y="-634.7" font-family="Times,serif" font-size="14.00">7h37379bf3ce79a0d7E</text>
+<title>X3c6542d96320ad67_0</title>
+<polygon fill="none" stroke="red" points="3210.5,-79 3138.25,-79 3138.25,-38 3210.5,-38 3210.5,-79"/>
+<text xml:space="preserve" text-anchor="middle" x="3174.38" y="-61.7" font-family="Times,serif" font-size="14.00">Intr: </text>
+<text xml:space="preserve" text-anchor="middle" x="3174.38" y="-45.2" font-family="Times,serif" font-size="14.00">black_box</text>
 </g>
 <!-- X8b0ac2e54b9a91_0 -->
 <g id="node4" class="node">
 <title>X8b0ac2e54b9a91_0</title>
-<polygon fill="none" stroke="red" points="1438.62,-1145.5 1382.12,-1145.5 1382.12,-1109.5 1438.62,-1109.5 1438.62,-1145.5"/>
-<text xml:space="preserve" text-anchor="middle" x="1410.38" y="-1122.45" font-family="Times,serif" font-size="14.00">NoOp: </text>
+<polygon fill="none" stroke="red" points="2000.62,-1145.5 1944.12,-1145.5 1944.12,-1109.5 2000.62,-1109.5 2000.62,-1145.5"/>
+<text xml:space="preserve" text-anchor="middle" x="1972.38" y="-1122.45" font-family="Times,serif" font-size="14.00">NoOp: </text>
 </g>
-<!-- X3c6542d96320ad67_0 -->
+<!-- X210a8e5fe9313c81_0 -->
 <g id="node5" class="node">
-<title>X3c6542d96320ad67_0</title>
-<polygon fill="none" stroke="red" points="3540.5,-79 3468.25,-79 3468.25,-38 3540.5,-38 3540.5,-79"/>
-<text xml:space="preserve" text-anchor="middle" x="3504.38" y="-61.7" font-family="Times,serif" font-size="14.00">Intr: </text>
-<text xml:space="preserve" text-anchor="middle" x="3504.38" y="-45.2" font-family="Times,serif" font-size="14.00">black_box</text>
+<title>X210a8e5fe9313c81_0</title>
+<polygon fill="none" stroke="red" points="2771.12,-668.5 2597.62,-668.5 2597.62,-627.5 2771.12,-627.5 2771.12,-668.5"/>
+<text xml:space="preserve" text-anchor="middle" x="2684.38" y="-651.2" font-family="Times,serif" font-size="14.00">_ZN4core9panicking5panic1</text>
+<text xml:space="preserve" text-anchor="middle" x="2684.38" y="-634.7" font-family="Times,serif" font-size="14.00">7h37379bf3ce79a0d7E</text>
 </g>
 <!-- node_2 -->
 <g id="node6" class="node">
 <title>node_2</title>
-<polygon fill="#7ccd7c" stroke="#7ccd7c" points="1194.62,-1164.5 1126.12,-1164.5 1126.12,-1090.5 1194.62,-1090.5 1194.62,-1164.5"/>
-<text xml:space="preserve" text-anchor="start" x="1134.12" y="-1147.2" font-family="Times,serif" font-size="14.00">LOCALS</text>
-<text xml:space="preserve" text-anchor="start" x="1134.12" y="-1130.7" font-family="Times,serif" font-size="14.00">0 = ()</text>
-<text xml:space="preserve" text-anchor="start" x="1134.12" y="-1114.2" font-family="Times,serif" font-size="14.00">1 = char</text>
-<text xml:space="preserve" text-anchor="start" x="1134.12" y="-1097.7" font-family="Times,serif" font-size="14.00">2 = !</text>
+<polygon fill="#7ccd7c" stroke="#7ccd7c" points="2561.62,-1164.5 2493.12,-1164.5 2493.12,-1090.5 2561.62,-1090.5 2561.62,-1164.5"/>
+<text xml:space="preserve" text-anchor="start" x="2501.12" y="-1147.2" font-family="Times,serif" font-size="14.00">LOCALS</text>
+<text xml:space="preserve" text-anchor="start" x="2501.12" y="-1130.7" font-family="Times,serif" font-size="14.00">0 = ()</text>
+<text xml:space="preserve" text-anchor="start" x="2501.12" y="-1114.2" font-family="Times,serif" font-size="14.00">1 = char</text>
+<text xml:space="preserve" text-anchor="start" x="2501.12" y="-1097.7" font-family="Times,serif" font-size="14.00">2 = !</text>
 </g>
 <!-- X4e58a5f02abb8a08_0 -->
 <g id="node7" class="node">
 <title>X4e58a5f02abb8a08_0</title>
-<polygon fill="none" stroke="black" points="1364.25,-1148 1212.5,-1148 1212.5,-1107 1364.25,-1107 1364.25,-1148"/>
-<text xml:space="preserve" text-anchor="start" x="1220.5" y="-1130.7" font-family="Times,serif" font-size="14.00">1 &lt;&#45; Use(const 97_Char)</text>
-<text xml:space="preserve" text-anchor="start" x="1220.5" y="-1114.2" font-family="Times,serif" font-size="14.00">SwitchInt mv(1)</text>
+<polygon fill="none" stroke="black" points="2731.25,-1148 2579.5,-1148 2579.5,-1107 2731.25,-1107 2731.25,-1148"/>
+<text xml:space="preserve" text-anchor="start" x="2587.5" y="-1130.7" font-family="Times,serif" font-size="14.00">1 &lt;&#45; Use(const 97_Char)</text>
+<text xml:space="preserve" text-anchor="start" x="2587.5" y="-1114.2" font-family="Times,serif" font-size="14.00">SwitchInt mv(1)</text>
 </g>
 <!-- X4e58a5f02abb8a08_1 -->
 <g id="node8" class="node">
 <title>X4e58a5f02abb8a08_1</title>
-<polygon fill="none" stroke="black" points="1272.38,-872.75 1218.38,-872.75 1218.38,-836.75 1272.38,-836.75 1272.38,-872.75"/>
-<text xml:space="preserve" text-anchor="start" x="1226.38" y="-849.7" font-family="Times,serif" font-size="14.00">Return</text>
+<polygon fill="none" stroke="black" points="2639.38,-872.75 2585.38,-872.75 2585.38,-836.75 2639.38,-836.75 2639.38,-872.75"/>
+<text xml:space="preserve" text-anchor="start" x="2593.38" y="-849.7" font-family="Times,serif" font-size="14.00">Return</text>
 </g>
 <!-- X4e58a5f02abb8a08_0&#45;&gt;X4e58a5f02abb8a08_1 -->
 <g id="edge1" class="edge">
 <title>X4e58a5f02abb8a08_0&#45;&gt;X4e58a5f02abb8a08_1</title>
-<path fill="none" stroke="black" d="M1285.21,-1106.59C1277.69,-1059.25 1258.72,-939.78 1249.95,-884.56"/>
-<polygon fill="black" stroke="black" points="1253.41,-884.02 1248.38,-874.69 1246.49,-885.11 1253.41,-884.02"/>
-<text xml:space="preserve" text-anchor="middle" x="1277.48" y="-1009.7" font-family="Times,serif" font-size="14.00">97</text>
+<path fill="none" stroke="black" d="M2652.21,-1106.59C2644.69,-1059.25 2625.72,-939.78 2616.95,-884.56"/>
+<polygon fill="black" stroke="black" points="2620.41,-884.02 2615.38,-874.69 2613.49,-885.11 2620.41,-884.02"/>
+<text xml:space="preserve" text-anchor="middle" x="2644.48" y="-1009.7" font-family="Times,serif" font-size="14.00">97</text>
 </g>
 <!-- X4e58a5f02abb8a08_2 -->
 <g id="node9" class="node">
 <title>X4e58a5f02abb8a08_2</title>
-<polygon fill="none" stroke="black" points="1344.38,-872.75 1290.38,-872.75 1290.38,-836.75 1344.38,-836.75 1344.38,-872.75"/>
-<text xml:space="preserve" text-anchor="start" x="1298.38" y="-849.7" font-family="Times,serif" font-size="14.00">Call</text>
+<polygon fill="none" stroke="black" points="2711.38,-872.75 2657.38,-872.75 2657.38,-836.75 2711.38,-836.75 2711.38,-872.75"/>
+<text xml:space="preserve" text-anchor="start" x="2665.38" y="-849.7" font-family="Times,serif" font-size="14.00">Call</text>
 </g>
 <!-- X4e58a5f02abb8a08_0&#45;&gt;X4e58a5f02abb8a08_2 -->
 <g id="edge2" class="edge">
 <title>X4e58a5f02abb8a08_0&#45;&gt;X4e58a5f02abb8a08_2</title>
-<path fill="none" stroke="black" d="M1290.51,-1106.59C1295.58,-1059.25 1308.37,-939.78 1314.29,-884.56"/>
-<polygon fill="black" stroke="black" points="1317.76,-885.01 1315.35,-874.7 1310.8,-884.27 1317.76,-885.01"/>
-<text xml:space="preserve" text-anchor="middle" x="1315.01" y="-1009.7" font-family="Times,serif" font-size="14.00">other</text>
+<path fill="none" stroke="black" d="M2657.51,-1106.59C2662.58,-1059.25 2675.37,-939.78 2681.29,-884.56"/>
+<polygon fill="black" stroke="black" points="2684.76,-885.01 2682.35,-874.7 2677.8,-884.27 2684.76,-885.01"/>
+<text xml:space="preserve" text-anchor="middle" x="2682.01" y="-1009.7" font-family="Times,serif" font-size="14.00">other</text>
 </g>
 <!-- X4e58a5f02abb8a08_2&#45;&gt;X210a8e5fe9313c81_0 -->
 <g id="edge3" class="edge">
 <title>X4e58a5f02abb8a08_2&#45;&gt;X210a8e5fe9313c81_0</title>
-<path fill="none" stroke="black" d="M1317.38,-836.29C1317.38,-801.64 1317.38,-723.76 1317.38,-680.13"/>
-<polygon fill="black" stroke="black" points="1320.88,-680.31 1317.38,-670.31 1313.88,-680.31 1320.88,-680.31"/>
-<text xml:space="preserve" text-anchor="middle" x="1354.5" y="-778.2" font-family="Times,serif" font-size="14.00">const [alloc0]</text>
+<path fill="none" stroke="black" d="M2684.38,-836.29C2684.38,-801.64 2684.38,-723.76 2684.38,-680.13"/>
+<polygon fill="black" stroke="black" points="2687.88,-680.31 2684.38,-670.31 2680.88,-680.31 2687.88,-680.31"/>
+<text xml:space="preserve" text-anchor="middle" x="2721.5" y="-778.2" font-family="Times,serif" font-size="14.00">const [alloc0]</text>
 </g>
 <!-- node_4 -->
 <g id="node10" class="node">
@@ -457,302 +576,302 @@ fn main() {
 <!-- node_6 -->
 <g id="node13" class="node">
 <title>node_6</title>
-<polygon fill="#7ccd7c" stroke="#7ccd7c" points="2696.25,-718 2340.5,-718 2340.5,-578 2696.25,-578 2696.25,-718"/>
-<text xml:space="preserve" text-anchor="start" x="2348.5" y="-700.7" font-family="Times,serif" font-size="14.00">LOCALS</text>
-<text xml:space="preserve" text-anchor="start" x="2348.5" y="-684.2" font-family="Times,serif" font-size="14.00">0 = i32</text>
-<text xml:space="preserve" text-anchor="start" x="2348.5" y="-667.7" font-family="Times,serif" font-size="14.00">1 = &amp;{closure@std::rt::lang_start&lt;()&gt;::{closure#0}}</text>
-<text xml:space="preserve" text-anchor="start" x="2348.5" y="-651.2" font-family="Times,serif" font-size="14.00">2 = std::process::ExitCode</text>
-<text xml:space="preserve" text-anchor="start" x="2348.5" y="-634.7" font-family="Times,serif" font-size="14.00">3 = ()</text>
-<text xml:space="preserve" text-anchor="start" x="2348.5" y="-618.2" font-family="Times,serif" font-size="14.00">4 = fn()</text>
-<text xml:space="preserve" text-anchor="start" x="2348.5" y="-601.7" font-family="Times,serif" font-size="14.00">5 = &amp;std::sys::pal::unix::process::process_common::ExitCode</text>
-<text xml:space="preserve" text-anchor="start" x="2348.5" y="-585.2" font-family="Times,serif" font-size="14.00">6 = u8</text>
+<polygon fill="#7ccd7c" stroke="#7ccd7c" points="2366.25,-718 2010.5,-718 2010.5,-578 2366.25,-578 2366.25,-718"/>
+<text xml:space="preserve" text-anchor="start" x="2018.5" y="-700.7" font-family="Times,serif" font-size="14.00">LOCALS</text>
+<text xml:space="preserve" text-anchor="start" x="2018.5" y="-684.2" font-family="Times,serif" font-size="14.00">0 = i32</text>
+<text xml:space="preserve" text-anchor="start" x="2018.5" y="-667.7" font-family="Times,serif" font-size="14.00">1 = &amp;{closure@std::rt::lang_start&lt;()&gt;::{closure#0}}</text>
+<text xml:space="preserve" text-anchor="start" x="2018.5" y="-651.2" font-family="Times,serif" font-size="14.00">2 = std::process::ExitCode</text>
+<text xml:space="preserve" text-anchor="start" x="2018.5" y="-634.7" font-family="Times,serif" font-size="14.00">3 = ()</text>
+<text xml:space="preserve" text-anchor="start" x="2018.5" y="-618.2" font-family="Times,serif" font-size="14.00">4 = fn()</text>
+<text xml:space="preserve" text-anchor="start" x="2018.5" y="-601.7" font-family="Times,serif" font-size="14.00">5 = &amp;std::sys::pal::unix::process::process_common::ExitCode</text>
+<text xml:space="preserve" text-anchor="start" x="2018.5" y="-585.2" font-family="Times,serif" font-size="14.00">6 = u8</text>
 </g>
 <!-- Xd6bdb8f9f916c377_0 -->
 <g id="node14" class="node">
 <title>Xd6bdb8f9f916c377_0</title>
-<polygon fill="none" stroke="black" points="2842.25,-693.25 2714.5,-693.25 2714.5,-602.75 2842.25,-602.75 2842.25,-693.25"/>
-<text xml:space="preserve" text-anchor="start" x="2722.5" y="-675.95" font-family="Times,serif" font-size="14.00">Storage Live _2</text>
-<text xml:space="preserve" text-anchor="start" x="2722.5" y="-659.45" font-family="Times,serif" font-size="14.00">Storage Live _3</text>
-<text xml:space="preserve" text-anchor="start" x="2722.5" y="-642.95" font-family="Times,serif" font-size="14.00">Storage Live _4</text>
-<text xml:space="preserve" text-anchor="start" x="2722.5" y="-626.45" font-family="Times,serif" font-size="14.00">4 &lt;&#45; Use(cp((*1).0))</text>
-<text xml:space="preserve" text-anchor="start" x="2722.5" y="-609.95" font-family="Times,serif" font-size="14.00">Call</text>
+<polygon fill="none" stroke="black" points="2512.25,-693.25 2384.5,-693.25 2384.5,-602.75 2512.25,-602.75 2512.25,-693.25"/>
+<text xml:space="preserve" text-anchor="start" x="2392.5" y="-675.95" font-family="Times,serif" font-size="14.00">Storage Live _2</text>
+<text xml:space="preserve" text-anchor="start" x="2392.5" y="-659.45" font-family="Times,serif" font-size="14.00">Storage Live _3</text>
+<text xml:space="preserve" text-anchor="start" x="2392.5" y="-642.95" font-family="Times,serif" font-size="14.00">Storage Live _4</text>
+<text xml:space="preserve" text-anchor="start" x="2392.5" y="-626.45" font-family="Times,serif" font-size="14.00">4 &lt;&#45; Use(cp((*1).0))</text>
+<text xml:space="preserve" text-anchor="start" x="2392.5" y="-609.95" font-family="Times,serif" font-size="14.00">Call</text>
 </g>
 <!-- Xd6bdb8f9f916c377_1 -->
 <g id="node15" class="node">
 <title>Xd6bdb8f9f916c377_1</title>
-<polygon fill="none" stroke="black" points="2831.75,-437 2725,-437 2725,-396 2831.75,-396 2831.75,-437"/>
-<text xml:space="preserve" text-anchor="start" x="2733" y="-419.7" font-family="Times,serif" font-size="14.00">Storage Dead _4</text>
-<text xml:space="preserve" text-anchor="start" x="2733" y="-403.2" font-family="Times,serif" font-size="14.00">Call</text>
+<polygon fill="none" stroke="black" points="2501.75,-437 2395,-437 2395,-396 2501.75,-396 2501.75,-437"/>
+<text xml:space="preserve" text-anchor="start" x="2403" y="-419.7" font-family="Times,serif" font-size="14.00">Storage Dead _4</text>
+<text xml:space="preserve" text-anchor="start" x="2403" y="-403.2" font-family="Times,serif" font-size="14.00">Call</text>
 </g>
 <!-- Xd6bdb8f9f916c377_0&#45;&gt;Xd6bdb8f9f916c377_1 -->
 <g id="edge6" class="edge">
 <title>Xd6bdb8f9f916c377_0&#45;&gt;Xd6bdb8f9f916c377_1</title>
-<path fill="none" stroke="black" d="M2778.38,-602.48C2778.38,-557.23 2778.38,-488.32 2778.38,-448.63"/>
-<polygon fill="black" stroke="black" points="2781.88,-448.82 2778.38,-438.82 2774.88,-448.82 2781.88,-448.82"/>
-<text xml:space="preserve" text-anchor="middle" x="2781.75" y="-546.7" font-family="Times,serif" font-size="14.00">3</text>
+<path fill="none" stroke="black" d="M2448.38,-602.48C2448.38,-557.23 2448.38,-488.32 2448.38,-448.63"/>
+<polygon fill="black" stroke="black" points="2451.88,-448.82 2448.38,-438.82 2444.88,-448.82 2451.88,-448.82"/>
+<text xml:space="preserve" text-anchor="middle" x="2451.75" y="-546.7" font-family="Times,serif" font-size="14.00">3</text>
 </g>
 <!-- X76360b8370fbfec8_0 -->
 <g id="node17" class="node">
 <title>X76360b8370fbfec8_0</title>
-<polygon fill="none" stroke="black" points="3366.38,-434.5 3312.38,-434.5 3312.38,-398.5 3366.38,-398.5 3366.38,-434.5"/>
-<text xml:space="preserve" text-anchor="start" x="3320.38" y="-411.45" font-family="Times,serif" font-size="14.00">Call</text>
+<polygon fill="none" stroke="black" points="3036.38,-434.5 2982.38,-434.5 2982.38,-398.5 3036.38,-398.5 3036.38,-434.5"/>
+<text xml:space="preserve" text-anchor="start" x="2990.38" y="-411.45" font-family="Times,serif" font-size="14.00">Call</text>
 </g>
 <!-- Xd6bdb8f9f916c377_0&#45;&gt;X76360b8370fbfec8_0 -->
 <g id="edge8" class="edge">
 <title>Xd6bdb8f9f916c377_0&#45;&gt;X76360b8370fbfec8_0</title>
-<path fill="none" stroke="black" d="M2842.73,-620.67C2960.53,-572.48 3207.37,-471.5 3301.66,-432.93"/>
-<polygon fill="black" stroke="black" points="3302.79,-436.25 3310.72,-429.22 3300.14,-429.77 3302.79,-436.25"/>
-<text xml:space="preserve" text-anchor="middle" x="3042.16" y="-546.7" font-family="Times,serif" font-size="14.00">mv(4)</text>
+<path fill="none" stroke="black" d="M2512.6,-613.77C2536.2,-601.98 2563.29,-588.94 2588.38,-578 2727.17,-517.5 2896.76,-456.73 2971.23,-430.69"/>
+<polygon fill="black" stroke="black" points="2972.21,-434.05 2980.5,-427.45 2969.91,-427.44 2972.21,-434.05"/>
+<text xml:space="preserve" text-anchor="middle" x="2684.72" y="-546.7" font-family="Times,serif" font-size="14.00">mv(4)</text>
 </g>
 <!-- Xd6bdb8f9f916c377_2 -->
 <g id="node16" class="node">
 <title>Xd6bdb8f9f916c377_2</title>
-<polygon fill="none" stroke="black" points="2842.38,-304.5 2688.38,-304.5 2688.38,-131.5 2842.38,-131.5 2842.38,-304.5"/>
-<text xml:space="preserve" text-anchor="start" x="2696.38" y="-287.2" font-family="Times,serif" font-size="14.00">Storage Dead _3</text>
-<text xml:space="preserve" text-anchor="start" x="2696.38" y="-270.7" font-family="Times,serif" font-size="14.00">Storage Live _5</text>
-<text xml:space="preserve" text-anchor="start" x="2696.38" y="-254.2" font-family="Times,serif" font-size="14.00">5 &lt;&#45; &amp; 2.0</text>
-<text xml:space="preserve" text-anchor="start" x="2696.38" y="-237.7" font-family="Times,serif" font-size="14.00">Storage Live _6</text>
-<text xml:space="preserve" text-anchor="start" x="2696.38" y="-221.2" font-family="Times,serif" font-size="14.00">6 &lt;&#45; Use(cp(2.0.0))</text>
-<text xml:space="preserve" text-anchor="start" x="2696.38" y="-204.7" font-family="Times,serif" font-size="14.00">0 &lt;&#45; Cast&#45;IntToInt mv(6)</text>
-<text xml:space="preserve" text-anchor="start" x="2696.38" y="-188.2" font-family="Times,serif" font-size="14.00">Storage Dead _6</text>
-<text xml:space="preserve" text-anchor="start" x="2696.38" y="-171.7" font-family="Times,serif" font-size="14.00">Storage Dead _5</text>
-<text xml:space="preserve" text-anchor="start" x="2696.38" y="-155.2" font-family="Times,serif" font-size="14.00">Storage Dead _2</text>
-<text xml:space="preserve" text-anchor="start" x="2696.38" y="-138.7" font-family="Times,serif" font-size="14.00">Return</text>
+<polygon fill="none" stroke="black" points="2512.38,-304.5 2358.38,-304.5 2358.38,-131.5 2512.38,-131.5 2512.38,-304.5"/>
+<text xml:space="preserve" text-anchor="start" x="2366.38" y="-287.2" font-family="Times,serif" font-size="14.00">Storage Dead _3</text>
+<text xml:space="preserve" text-anchor="start" x="2366.38" y="-270.7" font-family="Times,serif" font-size="14.00">Storage Live _5</text>
+<text xml:space="preserve" text-anchor="start" x="2366.38" y="-254.2" font-family="Times,serif" font-size="14.00">5 &lt;&#45; &amp; 2.0</text>
+<text xml:space="preserve" text-anchor="start" x="2366.38" y="-237.7" font-family="Times,serif" font-size="14.00">Storage Live _6</text>
+<text xml:space="preserve" text-anchor="start" x="2366.38" y="-221.2" font-family="Times,serif" font-size="14.00">6 &lt;&#45; Use(cp(2.0.0))</text>
+<text xml:space="preserve" text-anchor="start" x="2366.38" y="-204.7" font-family="Times,serif" font-size="14.00">0 &lt;&#45; Cast&#45;IntToInt mv(6)</text>
+<text xml:space="preserve" text-anchor="start" x="2366.38" y="-188.2" font-family="Times,serif" font-size="14.00">Storage Dead _6</text>
+<text xml:space="preserve" text-anchor="start" x="2366.38" y="-171.7" font-family="Times,serif" font-size="14.00">Storage Dead _5</text>
+<text xml:space="preserve" text-anchor="start" x="2366.38" y="-155.2" font-family="Times,serif" font-size="14.00">Storage Dead _2</text>
+<text xml:space="preserve" text-anchor="start" x="2366.38" y="-138.7" font-family="Times,serif" font-size="14.00">Return</text>
 </g>
 <!-- Xd6bdb8f9f916c377_1&#45;&gt;Xd6bdb8f9f916c377_2 -->
 <g id="edge7" class="edge">
 <title>Xd6bdb8f9f916c377_1&#45;&gt;Xd6bdb8f9f916c377_2</title>
-<path fill="none" stroke="black" d="M2777.06,-395.58C2775.8,-376.54 2773.8,-346.38 2771.81,-316.33"/>
-<polygon fill="black" stroke="black" points="2775.31,-316.1 2771.15,-306.35 2768.32,-316.56 2775.31,-316.1"/>
-<text xml:space="preserve" text-anchor="middle" x="2777.91" y="-348.2" font-family="Times,serif" font-size="14.00">2</text>
+<path fill="none" stroke="black" d="M2447.06,-395.58C2445.8,-376.54 2443.8,-346.38 2441.81,-316.33"/>
+<polygon fill="black" stroke="black" points="2445.31,-316.1 2441.15,-306.35 2438.32,-316.56 2445.31,-316.1"/>
+<text xml:space="preserve" text-anchor="middle" x="2447.91" y="-348.2" font-family="Times,serif" font-size="14.00">2</text>
 </g>
 <!-- Xb01730a897bc8066_0 -->
 <g id="node18" class="node">
 <title>Xb01730a897bc8066_0</title>
-<polygon fill="none" stroke="black" points="3107.88,-238.5 2866.88,-238.5 2866.88,-197.5 3107.88,-197.5 3107.88,-238.5"/>
-<text xml:space="preserve" text-anchor="start" x="2874.88" y="-221.2" font-family="Times,serif" font-size="14.00">0 &lt;&#45; Use(const 0_std::process::ExitCode)</text>
-<text xml:space="preserve" text-anchor="start" x="2874.88" y="-204.7" font-family="Times,serif" font-size="14.00">Return</text>
+<polygon fill="none" stroke="black" points="2777.88,-238.5 2536.88,-238.5 2536.88,-197.5 2777.88,-197.5 2777.88,-238.5"/>
+<text xml:space="preserve" text-anchor="start" x="2544.88" y="-221.2" font-family="Times,serif" font-size="14.00">0 &lt;&#45; Use(const 0_std::process::ExitCode)</text>
+<text xml:space="preserve" text-anchor="start" x="2544.88" y="-204.7" font-family="Times,serif" font-size="14.00">Return</text>
 </g>
 <!-- Xd6bdb8f9f916c377_1&#45;&gt;Xb01730a897bc8066_0 -->
 <g id="edge9" class="edge">
 <title>Xd6bdb8f9f916c377_1&#45;&gt;Xb01730a897bc8066_0</title>
-<path fill="none" stroke="black" d="M2799.57,-395.58C2837.04,-360.34 2915.08,-286.97 2957.82,-246.78"/>
-<polygon fill="black" stroke="black" points="2960.14,-249.41 2965.03,-240.01 2955.34,-244.31 2960.14,-249.41"/>
-<text xml:space="preserve" text-anchor="middle" x="2868.82" y="-348.2" font-family="Times,serif" font-size="14.00">mv(3)</text>
+<path fill="none" stroke="black" d="M2469.57,-395.58C2507.04,-360.34 2585.08,-286.97 2627.82,-246.78"/>
+<polygon fill="black" stroke="black" points="2630.14,-249.41 2635.03,-240.01 2625.34,-244.31 2630.14,-249.41"/>
+<text xml:space="preserve" text-anchor="middle" x="2538.82" y="-348.2" font-family="Times,serif" font-size="14.00">mv(3)</text>
 </g>
 <!-- X76360b8370fbfec8_1 -->
 <g id="node20" class="node">
 <title>X76360b8370fbfec8_1</title>
-<polygon fill="none" stroke="black" points="3408.38,-236 3354.38,-236 3354.38,-200 3408.38,-200 3408.38,-236"/>
-<text xml:space="preserve" text-anchor="start" x="3362.38" y="-212.95" font-family="Times,serif" font-size="14.00">Call</text>
+<polygon fill="none" stroke="black" points="3078.38,-236 3024.38,-236 3024.38,-200 3078.38,-200 3078.38,-236"/>
+<text xml:space="preserve" text-anchor="start" x="3032.38" y="-212.95" font-family="Times,serif" font-size="14.00">Call</text>
 </g>
 <!-- X76360b8370fbfec8_0&#45;&gt;X76360b8370fbfec8_1 -->
 <g id="edge10" class="edge">
 <title>X76360b8370fbfec8_0&#45;&gt;X76360b8370fbfec8_1</title>
-<path fill="none" stroke="black" d="M3343.1,-398.06C3350.36,-364.12 3366.43,-288.91 3375.27,-247.58"/>
-<polygon fill="black" stroke="black" points="3378.67,-248.39 3377.34,-237.88 3371.83,-246.93 3378.67,-248.39"/>
-<text xml:space="preserve" text-anchor="middle" x="3357.53" y="-348.2" font-family="Times,serif" font-size="14.00">0</text>
+<path fill="none" stroke="black" d="M3013.1,-398.06C3020.36,-364.12 3036.43,-288.91 3045.27,-247.58"/>
+<polygon fill="black" stroke="black" points="3048.67,-248.39 3047.34,-237.88 3041.83,-246.93 3048.67,-248.39"/>
+<text xml:space="preserve" text-anchor="middle" x="3027.53" y="-348.2" font-family="Times,serif" font-size="14.00">0</text>
 </g>
 <!-- Xea018b0379393ed5_0 -->
 <g id="node22" class="node">
 <title>Xea018b0379393ed5_0</title>
-<polygon fill="none" stroke="black" points="3613.38,-236 3559.38,-236 3559.38,-200 3613.38,-200 3613.38,-236"/>
-<text xml:space="preserve" text-anchor="start" x="3567.38" y="-212.95" font-family="Times,serif" font-size="14.00">Call</text>
+<polygon fill="none" stroke="black" points="3283.38,-236 3229.38,-236 3229.38,-200 3283.38,-200 3283.38,-236"/>
+<text xml:space="preserve" text-anchor="start" x="3237.38" y="-212.95" font-family="Times,serif" font-size="14.00">Call</text>
 </g>
 <!-- X76360b8370fbfec8_0&#45;&gt;Xea018b0379393ed5_0 -->
 <g id="edge12" class="edge">
 <title>X76360b8370fbfec8_0&#45;&gt;Xea018b0379393ed5_0</title>
-<path fill="none" stroke="black" d="M3354.44,-398.11C3360.52,-391.74 3367.87,-384.81 3375.38,-379.5 3411.17,-354.19 3428.37,-362.01 3464.38,-337 3503.13,-310.08 3541.13,-270.67 3564.16,-244.93"/>
-<polygon fill="black" stroke="black" points="3566.66,-247.38 3570.66,-237.57 3561.42,-242.75 3566.66,-247.38"/>
-<text xml:space="preserve" text-anchor="middle" x="3489.63" y="-348.2" font-family="Times,serif" font-size="14.00">mv(1),const ()</text>
+<path fill="none" stroke="black" d="M3024.44,-398.11C3030.52,-391.74 3037.87,-384.81 3045.38,-379.5 3081.17,-354.19 3098.37,-362.01 3134.38,-337 3173.13,-310.08 3211.13,-270.67 3234.16,-244.93"/>
+<polygon fill="black" stroke="black" points="3236.66,-247.38 3240.66,-237.57 3231.42,-242.75 3236.66,-247.38"/>
+<text xml:space="preserve" text-anchor="middle" x="3159.63" y="-348.2" font-family="Times,serif" font-size="14.00">mv(1),const ()</text>
 </g>
 <!-- node_8 -->
 <g id="node19" class="node">
 <title>node_8</title>
-<polygon fill="#7ccd7c" stroke="#7ccd7c" points="3452.62,-453.5 3384.12,-453.5 3384.12,-379.5 3452.62,-379.5 3452.62,-453.5"/>
-<text xml:space="preserve" text-anchor="start" x="3392.12" y="-436.2" font-family="Times,serif" font-size="14.00">LOCALS</text>
-<text xml:space="preserve" text-anchor="start" x="3392.12" y="-419.7" font-family="Times,serif" font-size="14.00">0 = ()</text>
-<text xml:space="preserve" text-anchor="start" x="3392.12" y="-403.2" font-family="Times,serif" font-size="14.00">1 = fn()</text>
-<text xml:space="preserve" text-anchor="start" x="3392.12" y="-386.7" font-family="Times,serif" font-size="14.00">2 = ()</text>
+<polygon fill="#7ccd7c" stroke="#7ccd7c" points="3122.62,-453.5 3054.12,-453.5 3054.12,-379.5 3122.62,-379.5 3122.62,-453.5"/>
+<text xml:space="preserve" text-anchor="start" x="3062.12" y="-436.2" font-family="Times,serif" font-size="14.00">LOCALS</text>
+<text xml:space="preserve" text-anchor="start" x="3062.12" y="-419.7" font-family="Times,serif" font-size="14.00">0 = ()</text>
+<text xml:space="preserve" text-anchor="start" x="3062.12" y="-403.2" font-family="Times,serif" font-size="14.00">1 = fn()</text>
+<text xml:space="preserve" text-anchor="start" x="3062.12" y="-386.7" font-family="Times,serif" font-size="14.00">2 = ()</text>
 </g>
 <!-- X76360b8370fbfec8_1&#45;&gt;X3c6542d96320ad67_0 -->
 <g id="edge13" class="edge">
 <title>X76360b8370fbfec8_1&#45;&gt;X3c6542d96320ad67_0</title>
-<path fill="none" stroke="black" d="M3395.01,-199.54C3416.07,-172.57 3456.74,-120.5 3482.11,-88.01"/>
-<polygon fill="black" stroke="black" points="3484.82,-90.23 3488.21,-80.2 3479.3,-85.92 3484.82,-90.23"/>
-<text xml:space="preserve" text-anchor="middle" x="3495.28" y="-100.2" font-family="Times,serif" font-size="14.00">const ()</text>
+<path fill="none" stroke="black" d="M3065.01,-199.54C3086.07,-172.57 3126.74,-120.5 3152.11,-88.01"/>
+<polygon fill="black" stroke="black" points="3154.82,-90.23 3158.21,-80.2 3149.3,-85.92 3154.82,-90.23"/>
+<text xml:space="preserve" text-anchor="middle" x="3165.28" y="-100.2" font-family="Times,serif" font-size="14.00">const ()</text>
 </g>
 <!-- X76360b8370fbfec8_2 -->
 <g id="node21" class="node">
 <title>X76360b8370fbfec8_2</title>
-<polygon fill="none" stroke="black" points="3408.38,-76.5 3354.38,-76.5 3354.38,-40.5 3408.38,-40.5 3408.38,-76.5"/>
-<text xml:space="preserve" text-anchor="start" x="3362.38" y="-53.45" font-family="Times,serif" font-size="14.00">Return</text>
+<polygon fill="none" stroke="black" points="3078.38,-76.5 3024.38,-76.5 3024.38,-40.5 3078.38,-40.5 3078.38,-76.5"/>
+<text xml:space="preserve" text-anchor="start" x="3032.38" y="-53.45" font-family="Times,serif" font-size="14.00">Return</text>
 </g>
 <!-- X76360b8370fbfec8_1&#45;&gt;X76360b8370fbfec8_2 -->
 <g id="edge11" class="edge">
 <title>X76360b8370fbfec8_1&#45;&gt;X76360b8370fbfec8_2</title>
-<path fill="none" stroke="black" d="M3381.38,-199.54C3381.38,-172.56 3381.38,-120.44 3381.38,-87.95"/>
-<polygon fill="black" stroke="black" points="3384.88,-88.07 3381.38,-78.07 3377.88,-88.07 3384.88,-88.07"/>
-<text xml:space="preserve" text-anchor="middle" x="3384.75" y="-100.2" font-family="Times,serif" font-size="14.00">2</text>
+<path fill="none" stroke="black" d="M3051.38,-199.54C3051.38,-172.56 3051.38,-120.44 3051.38,-87.95"/>
+<polygon fill="black" stroke="black" points="3054.88,-88.07 3051.38,-78.07 3047.88,-88.07 3054.88,-88.07"/>
+<text xml:space="preserve" text-anchor="middle" x="3054.75" y="-100.2" font-family="Times,serif" font-size="14.00">2</text>
 </g>
 <!-- Xea018b0379393ed5_0&#45;&gt;Xea018b0379393ed5_0 -->
 <g id="edge17" class="edge">
 <title>Xea018b0379393ed5_0&#45;&gt;Xea018b0379393ed5_0:1</title>
-<path fill="none" stroke="black" d="M3603.93,-236.41C3617.52,-243.3 3631.38,-237.16 3631.38,-218 3631.38,-204.08 3624.06,-197.03 3614.85,-196.86"/>
-<polygon fill="black" stroke="black" points="3614.25,-193.4 3605.4,-199.22 3615.95,-200.2 3614.25,-193.4"/>
+<path fill="none" stroke="black" d="M3273.93,-236.41C3287.52,-243.3 3301.38,-237.16 3301.38,-218 3301.38,-204.08 3294.06,-197.03 3284.85,-196.86"/>
+<polygon fill="black" stroke="black" points="3284.25,-193.4 3275.4,-199.22 3285.95,-200.2 3284.25,-193.4"/>
 </g>
 <!-- Xea018b0379393ed5_1 -->
 <g id="node28" class="node">
 <title>Xea018b0379393ed5_1</title>
-<polygon fill="none" stroke="black" points="3613.38,-76.5 3559.38,-76.5 3559.38,-40.5 3613.38,-40.5 3613.38,-76.5"/>
-<text xml:space="preserve" text-anchor="start" x="3567.38" y="-53.45" font-family="Times,serif" font-size="14.00">Return</text>
+<polygon fill="none" stroke="black" points="3283.38,-76.5 3229.38,-76.5 3229.38,-40.5 3283.38,-40.5 3283.38,-76.5"/>
+<text xml:space="preserve" text-anchor="start" x="3237.38" y="-53.45" font-family="Times,serif" font-size="14.00">Return</text>
 </g>
 <!-- Xea018b0379393ed5_0&#45;&gt;Xea018b0379393ed5_1 -->
 <g id="edge16" class="edge">
 <title>Xea018b0379393ed5_0&#45;&gt;Xea018b0379393ed5_1</title>
-<path fill="none" stroke="black" d="M3586.38,-199.54C3586.38,-172.56 3586.38,-120.44 3586.38,-87.95"/>
-<polygon fill="black" stroke="black" points="3589.88,-88.07 3586.38,-78.07 3582.88,-88.07 3589.88,-88.07"/>
-<text xml:space="preserve" text-anchor="middle" x="3589.75" y="-100.2" font-family="Times,serif" font-size="14.00">0</text>
+<path fill="none" stroke="black" d="M3256.38,-199.54C3256.38,-172.56 3256.38,-120.44 3256.38,-87.95"/>
+<polygon fill="black" stroke="black" points="3259.88,-88.07 3256.38,-78.07 3252.88,-88.07 3259.88,-88.07"/>
+<text xml:space="preserve" text-anchor="middle" x="3259.75" y="-100.2" font-family="Times,serif" font-size="14.00">0</text>
 </g>
 <!-- node_10 -->
 <g id="node23" class="node">
 <title>node_10</title>
-<polygon fill="#7ccd7c" stroke="#7ccd7c" points="1784,-1164.5 1456.75,-1164.5 1456.75,-1090.5 1784,-1090.5 1784,-1164.5"/>
-<text xml:space="preserve" text-anchor="start" x="1464.75" y="-1147.2" font-family="Times,serif" font-size="14.00">LOCALS</text>
-<text xml:space="preserve" text-anchor="start" x="1464.75" y="-1130.7" font-family="Times,serif" font-size="14.00">0 = i32</text>
-<text xml:space="preserve" text-anchor="start" x="1464.75" y="-1114.2" font-family="Times,serif" font-size="14.00">1 = *mut {closure@std::rt::lang_start&lt;()&gt;::{closure#0}}</text>
-<text xml:space="preserve" text-anchor="start" x="1464.75" y="-1097.7" font-family="Times,serif" font-size="14.00">2 = ()</text>
+<polygon fill="#7ccd7c" stroke="#7ccd7c" points="1454,-1164.5 1126.75,-1164.5 1126.75,-1090.5 1454,-1090.5 1454,-1164.5"/>
+<text xml:space="preserve" text-anchor="start" x="1134.75" y="-1147.2" font-family="Times,serif" font-size="14.00">LOCALS</text>
+<text xml:space="preserve" text-anchor="start" x="1134.75" y="-1130.7" font-family="Times,serif" font-size="14.00">0 = i32</text>
+<text xml:space="preserve" text-anchor="start" x="1134.75" y="-1114.2" font-family="Times,serif" font-size="14.00">1 = *mut {closure@std::rt::lang_start&lt;()&gt;::{closure#0}}</text>
+<text xml:space="preserve" text-anchor="start" x="1134.75" y="-1097.7" font-family="Times,serif" font-size="14.00">2 = ()</text>
 </g>
 <!-- X30ffccddb31b242d_0 -->
 <g id="node24" class="node">
 <title>X30ffccddb31b242d_0</title>
-<polygon fill="none" stroke="black" points="1856.38,-1145.5 1802.38,-1145.5 1802.38,-1109.5 1856.38,-1109.5 1856.38,-1145.5"/>
-<text xml:space="preserve" text-anchor="start" x="1810.38" y="-1122.45" font-family="Times,serif" font-size="14.00">Call</text>
+<polygon fill="none" stroke="black" points="1526.38,-1145.5 1472.38,-1145.5 1472.38,-1109.5 1526.38,-1109.5 1526.38,-1145.5"/>
+<text xml:space="preserve" text-anchor="start" x="1480.38" y="-1122.45" font-family="Times,serif" font-size="14.00">Call</text>
 </g>
 <!-- X30ffccddb31b242d_1 -->
 <g id="node25" class="node">
 <title>X30ffccddb31b242d_1</title>
-<polygon fill="none" stroke="black" points="1856.38,-872.75 1802.38,-872.75 1802.38,-836.75 1856.38,-836.75 1856.38,-872.75"/>
-<text xml:space="preserve" text-anchor="start" x="1810.38" y="-849.7" font-family="Times,serif" font-size="14.00">Return</text>
+<polygon fill="none" stroke="black" points="1526.38,-872.75 1472.38,-872.75 1472.38,-836.75 1526.38,-836.75 1526.38,-872.75"/>
+<text xml:space="preserve" text-anchor="start" x="1480.38" y="-849.7" font-family="Times,serif" font-size="14.00">Return</text>
 </g>
 <!-- X30ffccddb31b242d_0&#45;&gt;X30ffccddb31b242d_1 -->
 <g id="edge14" class="edge">
 <title>X30ffccddb31b242d_0&#45;&gt;X30ffccddb31b242d_1</title>
-<path fill="none" stroke="black" d="M1829.38,-1109.15C1829.38,-1063.59 1829.38,-940.21 1829.38,-884.15"/>
-<polygon fill="black" stroke="black" points="1832.88,-884.47 1829.38,-874.47 1825.88,-884.47 1832.88,-884.47"/>
-<text xml:space="preserve" text-anchor="middle" x="1832.75" y="-1009.7" font-family="Times,serif" font-size="14.00">0</text>
+<path fill="none" stroke="black" d="M1499.38,-1109.15C1499.38,-1063.59 1499.38,-940.21 1499.38,-884.15"/>
+<polygon fill="black" stroke="black" points="1502.88,-884.47 1499.38,-874.47 1495.88,-884.47 1502.88,-884.47"/>
+<text xml:space="preserve" text-anchor="middle" x="1502.75" y="-1009.7" font-family="Times,serif" font-size="14.00">0</text>
 </g>
 <!-- X2eeb0b8cf8e3b702_0 -->
 <g id="node26" class="node">
 <title>X2eeb0b8cf8e3b702_0</title>
-<polygon fill="none" stroke="black" points="1966.62,-875.25 1880.12,-875.25 1880.12,-834.25 1966.62,-834.25 1966.62,-875.25"/>
-<text xml:space="preserve" text-anchor="start" x="1888.12" y="-857.95" font-family="Times,serif" font-size="14.00">3 &lt;&#45; &amp;mut 1</text>
-<text xml:space="preserve" text-anchor="start" x="1888.12" y="-841.45" font-family="Times,serif" font-size="14.00">Call</text>
+<polygon fill="none" stroke="black" points="1636.62,-875.25 1550.12,-875.25 1550.12,-834.25 1636.62,-834.25 1636.62,-875.25"/>
+<text xml:space="preserve" text-anchor="start" x="1558.12" y="-857.95" font-family="Times,serif" font-size="14.00">3 &lt;&#45; &amp;mut 1</text>
+<text xml:space="preserve" text-anchor="start" x="1558.12" y="-841.45" font-family="Times,serif" font-size="14.00">Call</text>
 </g>
 <!-- X30ffccddb31b242d_0&#45;&gt;X2eeb0b8cf8e3b702_0 -->
 <g id="edge15" class="edge">
 <title>X30ffccddb31b242d_0&#45;&gt;X2eeb0b8cf8e3b702_0</title>
-<path fill="none" stroke="black" d="M1835.4,-1109.15C1851.02,-1064.16 1892.98,-943.3 1912.77,-886.3"/>
-<polygon fill="black" stroke="black" points="1916.06,-887.5 1916.03,-876.9 1909.45,-885.2 1916.06,-887.5"/>
-<text xml:space="preserve" text-anchor="middle" x="1914.25" y="-1009.7" font-family="Times,serif" font-size="14.00">mv((*1)),mv(2)</text>
+<path fill="none" stroke="black" d="M1505.4,-1109.15C1521.02,-1064.16 1562.98,-943.3 1582.77,-886.3"/>
+<polygon fill="black" stroke="black" points="1586.06,-887.5 1586.03,-876.9 1579.45,-885.2 1586.06,-887.5"/>
+<text xml:space="preserve" text-anchor="middle" x="1584.25" y="-1009.7" font-family="Times,serif" font-size="14.00">mv((*1)),mv(2)</text>
 </g>
 <!-- X2eeb0b8cf8e3b702_0&#45;&gt;Xd6bdb8f9f916c377_0 -->
 <g id="edge22" class="edge">
 <title>X2eeb0b8cf8e3b702_0&#45;&gt;Xd6bdb8f9f916c377_0</title>
-<path fill="none" stroke="black" d="M1937.08,-833.93C1946.39,-822.24 1959.82,-808.4 1975.38,-801.5 2123.83,-735.65 2565.42,-849.38 2705.38,-767 2729.34,-752.9 2746.53,-727.52 2758.19,-703.91"/>
-<polygon fill="black" stroke="black" points="2761.31,-705.5 2762.36,-694.96 2754.97,-702.54 2761.31,-705.5"/>
-<text xml:space="preserve" text-anchor="middle" x="2722.8" y="-778.2" font-family="Times,serif" font-size="14.00">mv(3),mv(2)</text>
+<path fill="none" stroke="black" d="M1607.08,-833.93C1616.39,-822.24 1629.82,-808.4 1645.38,-801.5 1793.83,-735.65 2235.42,-849.38 2375.38,-767 2399.34,-752.9 2416.53,-727.52 2428.19,-703.91"/>
+<polygon fill="black" stroke="black" points="2431.31,-705.5 2432.36,-694.96 2424.97,-702.54 2431.31,-705.5"/>
+<text xml:space="preserve" text-anchor="middle" x="2392.8" y="-778.2" font-family="Times,serif" font-size="14.00">mv(3),mv(2)</text>
 </g>
 <!-- X2eeb0b8cf8e3b702_3 -->
 <g id="node30" class="node">
 <title>X2eeb0b8cf8e3b702_3</title>
-<polygon fill="none" stroke="black" points="1944.5,-666 1890.25,-666 1890.25,-630 1944.5,-630 1944.5,-666"/>
-<text xml:space="preserve" text-anchor="start" x="1898.25" y="-642.95" font-family="Times,serif" font-size="14.00">Drop 1</text>
+<polygon fill="none" stroke="black" points="1614.5,-666 1560.25,-666 1560.25,-630 1614.5,-630 1614.5,-666"/>
+<text xml:space="preserve" text-anchor="start" x="1568.25" y="-642.95" font-family="Times,serif" font-size="14.00">Drop 1</text>
 </g>
 <!-- X2eeb0b8cf8e3b702_0&#45;&gt;X2eeb0b8cf8e3b702_3 -->
 <g id="edge18" class="edge">
 <title>X2eeb0b8cf8e3b702_0&#45;&gt;X2eeb0b8cf8e3b702_3</title>
-<path fill="none" stroke="black" d="M1922.71,-833.85C1922.31,-821.63 1921.8,-805.66 1921.38,-791.5 1920.18,-751.89 1918.92,-706.08 1918.14,-677.32"/>
-<polygon fill="black" stroke="black" points="1921.64,-677.52 1917.87,-667.62 1914.65,-677.71 1921.64,-677.52"/>
-<text xml:space="preserve" text-anchor="middle" x="1943.88" y="-778.2" font-family="Times,serif" font-size="14.00">Cleanup</text>
+<path fill="none" stroke="black" d="M1592.71,-833.85C1592.31,-821.63 1591.8,-805.66 1591.38,-791.5 1590.18,-751.89 1588.92,-706.08 1588.14,-677.32"/>
+<polygon fill="black" stroke="black" points="1591.64,-677.52 1587.87,-667.62 1584.65,-677.71 1591.64,-677.52"/>
+<text xml:space="preserve" text-anchor="middle" x="1613.88" y="-778.2" font-family="Times,serif" font-size="14.00">Cleanup</text>
 </g>
 <!-- X2eeb0b8cf8e3b702_1 -->
 <g id="node31" class="node">
 <title>X2eeb0b8cf8e3b702_1</title>
-<polygon fill="none" stroke="black" points="2017.5,-666 1963.25,-666 1963.25,-630 2017.5,-630 2017.5,-666"/>
-<text xml:space="preserve" text-anchor="start" x="1971.25" y="-642.95" font-family="Times,serif" font-size="14.00">Drop 1</text>
+<polygon fill="none" stroke="black" points="1687.5,-666 1633.25,-666 1633.25,-630 1687.5,-630 1687.5,-666"/>
+<text xml:space="preserve" text-anchor="start" x="1641.25" y="-642.95" font-family="Times,serif" font-size="14.00">Drop 1</text>
 </g>
 <!-- X2eeb0b8cf8e3b702_0&#45;&gt;X2eeb0b8cf8e3b702_1 -->
 <g id="edge19" class="edge">
 <title>X2eeb0b8cf8e3b702_0&#45;&gt;X2eeb0b8cf8e3b702_1</title>
-<path fill="none" stroke="black" d="M1940.56,-833.76C1949.64,-822.15 1960.15,-806.83 1966.38,-791.5 1981.64,-753.91 1987.19,-706.94 1989.22,-677.45"/>
-<polygon fill="black" stroke="black" points="1992.69,-678.02 1989.78,-667.84 1985.7,-677.62 1992.69,-678.02"/>
-<text xml:space="preserve" text-anchor="middle" x="1975.09" y="-778.2" font-family="Times,serif" font-size="14.00">0</text>
+<path fill="none" stroke="black" d="M1610.56,-833.76C1619.64,-822.15 1630.15,-806.83 1636.38,-791.5 1651.64,-753.91 1657.19,-706.94 1659.22,-677.45"/>
+<polygon fill="black" stroke="black" points="1662.69,-678.02 1659.78,-667.84 1655.7,-677.62 1662.69,-678.02"/>
+<text xml:space="preserve" text-anchor="middle" x="1645.09" y="-778.2" font-family="Times,serif" font-size="14.00">0</text>
 </g>
 <!-- node_12 -->
 <g id="node27" class="node">
 <title>node_12</title>
-<polygon fill="#7ccd7c" stroke="#7ccd7c" points="3717.62,-255 3649.12,-255 3649.12,-181 3717.62,-181 3717.62,-255"/>
-<text xml:space="preserve" text-anchor="start" x="3657.12" y="-237.7" font-family="Times,serif" font-size="14.00">LOCALS</text>
-<text xml:space="preserve" text-anchor="start" x="3657.12" y="-221.2" font-family="Times,serif" font-size="14.00">0 = ()</text>
-<text xml:space="preserve" text-anchor="start" x="3657.12" y="-204.7" font-family="Times,serif" font-size="14.00">1 = fn()</text>
-<text xml:space="preserve" text-anchor="start" x="3657.12" y="-188.2" font-family="Times,serif" font-size="14.00">2 = ()</text>
+<polygon fill="#7ccd7c" stroke="#7ccd7c" points="3387.62,-255 3319.12,-255 3319.12,-181 3387.62,-181 3387.62,-255"/>
+<text xml:space="preserve" text-anchor="start" x="3327.12" y="-237.7" font-family="Times,serif" font-size="14.00">LOCALS</text>
+<text xml:space="preserve" text-anchor="start" x="3327.12" y="-221.2" font-family="Times,serif" font-size="14.00">0 = ()</text>
+<text xml:space="preserve" text-anchor="start" x="3327.12" y="-204.7" font-family="Times,serif" font-size="14.00">1 = fn()</text>
+<text xml:space="preserve" text-anchor="start" x="3327.12" y="-188.2" font-family="Times,serif" font-size="14.00">2 = ()</text>
 </g>
 <!-- node_14 -->
 <g id="node29" class="node">
 <title>node_14</title>
-<polygon fill="#7ccd7c" stroke="#7ccd7c" points="2316.25,-900 1984.5,-900 1984.5,-809.5 2316.25,-809.5 2316.25,-900"/>
-<text xml:space="preserve" text-anchor="start" x="1992.5" y="-882.7" font-family="Times,serif" font-size="14.00">LOCALS</text>
-<text xml:space="preserve" text-anchor="start" x="1992.5" y="-866.2" font-family="Times,serif" font-size="14.00">0 = i32</text>
-<text xml:space="preserve" text-anchor="start" x="1992.5" y="-849.7" font-family="Times,serif" font-size="14.00">1 = {closure@std::rt::lang_start&lt;()&gt;::{closure#0}}</text>
-<text xml:space="preserve" text-anchor="start" x="1992.5" y="-833.2" font-family="Times,serif" font-size="14.00">2 = ()</text>
-<text xml:space="preserve" text-anchor="start" x="1992.5" y="-816.7" font-family="Times,serif" font-size="14.00">3 = &amp;mut {closure@std::rt::lang_start&lt;()&gt;::{closure#0}}</text>
+<polygon fill="#7ccd7c" stroke="#7ccd7c" points="1986.25,-900 1654.5,-900 1654.5,-809.5 1986.25,-809.5 1986.25,-900"/>
+<text xml:space="preserve" text-anchor="start" x="1662.5" y="-882.7" font-family="Times,serif" font-size="14.00">LOCALS</text>
+<text xml:space="preserve" text-anchor="start" x="1662.5" y="-866.2" font-family="Times,serif" font-size="14.00">0 = i32</text>
+<text xml:space="preserve" text-anchor="start" x="1662.5" y="-849.7" font-family="Times,serif" font-size="14.00">1 = {closure@std::rt::lang_start&lt;()&gt;::{closure#0}}</text>
+<text xml:space="preserve" text-anchor="start" x="1662.5" y="-833.2" font-family="Times,serif" font-size="14.00">2 = ()</text>
+<text xml:space="preserve" text-anchor="start" x="1662.5" y="-816.7" font-family="Times,serif" font-size="14.00">3 = &amp;mut {closure@std::rt::lang_start&lt;()&gt;::{closure#0}}</text>
 </g>
 <!-- X2eeb0b8cf8e3b702_4 -->
 <g id="node33" class="node">
 <title>X2eeb0b8cf8e3b702_4</title>
-<polygon fill="none" stroke="black" points="1946.5,-434.5 1886.25,-434.5 1886.25,-398.5 1946.5,-398.5 1946.5,-434.5"/>
-<text xml:space="preserve" text-anchor="start" x="1894.25" y="-411.45" font-family="Times,serif" font-size="14.00">Resume</text>
+<polygon fill="none" stroke="black" points="1616.5,-434.5 1556.25,-434.5 1556.25,-398.5 1616.5,-398.5 1616.5,-434.5"/>
+<text xml:space="preserve" text-anchor="start" x="1564.25" y="-411.45" font-family="Times,serif" font-size="14.00">Resume</text>
 </g>
 <!-- X2eeb0b8cf8e3b702_3&#45;&gt;X2eeb0b8cf8e3b702_4 -->
 <g id="edge21" class="edge">
 <title>X2eeb0b8cf8e3b702_3&#45;&gt;X2eeb0b8cf8e3b702_4</title>
-<path fill="none" stroke="black" d="M1917.3,-629.75C1917.13,-590.62 1916.71,-494.8 1916.5,-446.43"/>
-<polygon fill="black" stroke="black" points="1920,-446.45 1916.46,-436.46 1913,-446.48 1920,-446.45"/>
+<path fill="none" stroke="black" d="M1587.3,-629.75C1587.13,-590.62 1586.71,-494.8 1586.5,-446.43"/>
+<polygon fill="black" stroke="black" points="1590,-446.45 1586.46,-436.46 1583,-446.48 1590,-446.45"/>
 </g>
 <!-- X2eeb0b8cf8e3b702_2 -->
 <g id="node32" class="node">
 <title>X2eeb0b8cf8e3b702_2</title>
-<polygon fill="none" stroke="black" points="2018.38,-434.5 1964.38,-434.5 1964.38,-398.5 2018.38,-398.5 2018.38,-434.5"/>
-<text xml:space="preserve" text-anchor="start" x="1972.38" y="-411.45" font-family="Times,serif" font-size="14.00">Return</text>
+<polygon fill="none" stroke="black" points="1688.38,-434.5 1634.38,-434.5 1634.38,-398.5 1688.38,-398.5 1688.38,-434.5"/>
+<text xml:space="preserve" text-anchor="start" x="1642.38" y="-411.45" font-family="Times,serif" font-size="14.00">Return</text>
 </g>
 <!-- X2eeb0b8cf8e3b702_1&#45;&gt;X2eeb0b8cf8e3b702_2 -->
 <g id="edge20" class="edge">
 <title>X2eeb0b8cf8e3b702_1&#45;&gt;X2eeb0b8cf8e3b702_2</title>
-<path fill="none" stroke="black" d="M1990.45,-629.75C1990.62,-590.62 1991.04,-494.8 1991.25,-446.43"/>
-<polygon fill="black" stroke="black" points="1994.75,-446.48 1991.29,-436.46 1987.75,-446.45 1994.75,-446.48"/>
+<path fill="none" stroke="black" d="M1660.45,-629.75C1660.62,-590.62 1661.04,-494.8 1661.25,-446.43"/>
+<polygon fill="black" stroke="black" points="1664.75,-446.48 1661.29,-436.46 1657.75,-446.45 1664.75,-446.48"/>
 </g>
 <!-- node_16 -->
 <g id="node34" class="node">
 <title>node_16</title>
-<polygon fill="#7ccd7c" stroke="#7ccd7c" points="2926,-1156.25 2598.75,-1156.25 2598.75,-1098.75 2926,-1098.75 2926,-1156.25"/>
-<text xml:space="preserve" text-anchor="start" x="2606.75" y="-1138.95" font-family="Times,serif" font-size="14.00">LOCALS</text>
-<text xml:space="preserve" text-anchor="start" x="2606.75" y="-1122.45" font-family="Times,serif" font-size="14.00">0 = ()</text>
-<text xml:space="preserve" text-anchor="start" x="2606.75" y="-1105.95" font-family="Times,serif" font-size="14.00">1 = *mut {closure@std::rt::lang_start&lt;()&gt;::{closure#0}}</text>
+<polygon fill="#7ccd7c" stroke="#7ccd7c" points="3235,-1156.25 2907.75,-1156.25 2907.75,-1098.75 3235,-1098.75 3235,-1156.25"/>
+<text xml:space="preserve" text-anchor="start" x="2915.75" y="-1138.95" font-family="Times,serif" font-size="14.00">LOCALS</text>
+<text xml:space="preserve" text-anchor="start" x="2915.75" y="-1122.45" font-family="Times,serif" font-size="14.00">0 = ()</text>
+<text xml:space="preserve" text-anchor="start" x="2915.75" y="-1105.95" font-family="Times,serif" font-size="14.00">1 = *mut {closure@std::rt::lang_start&lt;()&gt;::{closure#0}}</text>
 </g>
 <!-- Xd700609f4cf459d5_0 -->
 <g id="node35" class="node">
 <title>Xd700609f4cf459d5_0</title>
-<polygon fill="none" stroke="black" points="2998.38,-1145.5 2944.38,-1145.5 2944.38,-1109.5 2998.38,-1109.5 2998.38,-1145.5"/>
-<text xml:space="preserve" text-anchor="start" x="2952.38" y="-1122.45" font-family="Times,serif" font-size="14.00">Return</text>
+<polygon fill="none" stroke="black" points="3307.38,-1145.5 3253.38,-1145.5 3253.38,-1109.5 3307.38,-1109.5 3307.38,-1145.5"/>
+<text xml:space="preserve" text-anchor="start" x="3261.38" y="-1122.45" font-family="Times,serif" font-size="14.00">Return</text>
 </g>
 <!-- node_18 -->
 <g id="node36" class="node">
 <title>node_18</title>
-<polygon fill="#7ccd7c" stroke="#7ccd7c" points="3286.75,-246.75 3126,-246.75 3126,-189.25 3286.75,-189.25 3286.75,-246.75"/>
-<text xml:space="preserve" text-anchor="start" x="3134" y="-229.45" font-family="Times,serif" font-size="14.00">LOCALS</text>
-<text xml:space="preserve" text-anchor="start" x="3134" y="-212.95" font-family="Times,serif" font-size="14.00">0 = std::process::ExitCode</text>
-<text xml:space="preserve" text-anchor="start" x="3134" y="-196.45" font-family="Times,serif" font-size="14.00">1 = ()</text>
+<polygon fill="#7ccd7c" stroke="#7ccd7c" points="2956.75,-246.75 2796,-246.75 2796,-189.25 2956.75,-189.25 2956.75,-246.75"/>
+<text xml:space="preserve" text-anchor="start" x="2804" y="-229.45" font-family="Times,serif" font-size="14.00">LOCALS</text>
+<text xml:space="preserve" text-anchor="start" x="2804" y="-212.95" font-family="Times,serif" font-size="14.00">0 = std::process::ExitCode</text>
+<text xml:space="preserve" text-anchor="start" x="2804" y="-196.45" font-family="Times,serif" font-size="14.00">1 = ()</text>
 </g>
 </g>
 </svg>
@@ -799,6 +918,46 @@ fn main() {
     <section class="function">
     <h2>main</h2>
     <p class="fn-meta">3 basic blocks — <code>main</code></p>
+    <details class="explorer-section">
+        <summary>Interactive Graph Explorer</summary>
+        <div class="explorer-path" id="path-main">
+            <span class="label">PATH:</span>
+            <span class="breadcrumb"></span>
+            <button onclick="explorers['main'].reset()">Reset</button>
+            <button onclick="explorers['main'].goBack()">← Back</button>
+        </div>
+        <div class="explorer-container">
+            <div class="explorer-graph" id="cy-main"></div>
+            <div class="explorer-context" id="ctx-main">
+                <h3 id="block-main">bb0</h3>
+                <span class="badge" id="role-main">entry</span>
+                <div class="summary" id="summary-main"></div>
+                <h4>Statements</h4>
+                <ul id="stmts-main"></ul>
+                <h4>Terminator</h4>
+                <div id="term-main"></div>
+                <h4>Next</h4>
+                <div class="explorer-edges" id="edges-main"></div>
+            </div>
+        </div>
+        <script>
+            (function() {
+                const data = {"name":"main","short_name":"main","blocks":[{"id":0,"statements":[{"mir":"_1 = 97","annotation":"Load constant"}],"terminator":{"kind":"switch","mir":"switchInt(move _1)","annotation":"Branch based on value of move _1","edges":[{"target":1,"label":"97","kind":"branch","annotation":"If move _1 == 97"},{"target":2,"label":"else","kind":"otherwise","annotation":"Otherwise (no match)"}]},"predecessors":[],"role":"entry","summary":"Entry point"},{"id":1,"statements":[],"terminator":{"kind":"return","mir":"return","annotation":"Return from function","edges":[]},"predecessors":[0],"role":"exit","summary":"Function returns"},{"id":2,"statements":[],"terminator":{"kind":"call","mir":"_2 = panic([16 bytes])","annotation":"Call panic","edges":[]},"predecessors":[0],"role":"linear","summary":"Call panic"}],"locals":["_0: ()","_1: char","_2: !"],"entry_block":0};
+                if (typeof explorers === 'undefined') window.explorers = {};
+
+                // Wait for details to open before initializing
+                const details = document.currentScript.closest('details');
+                let initialized = false;
+
+                details.addEventListener('toggle', function() {
+                    if (details.open && !initialized) {
+                        initialized = true;
+                        setTimeout(() => initExplorer('main', data), 50);
+                    }
+                });
+            })();
+        </script>
+    </details>
     <div class="block">
         <div class="block-header">bb0</div>
         <table class="annotated-table">
@@ -851,5 +1010,174 @@ fn main() {
     </div>
 </section>
 
+    <script>
+    
+function initExplorer(id, data) {
+    const cy = cytoscape({
+        container: document.getElementById('cy-' + id),
+        elements: buildElements(data),
+        style: [
+            { selector: 'node', style: {
+                'label': 'data(label)',
+                'text-valign': 'center',
+                'text-halign': 'center',
+                'background-color': '#3a3a5e',
+                'color': '#eee',
+                'font-size': '11px',
+                'font-family': 'monospace',
+                'width': 50,
+                'height': 30,
+                'shape': 'roundrectangle',
+                'border-width': 2,
+                'border-color': '#555'
+            }},
+            { selector: 'node.entry', style: { 'border-color': '#50fa7b', 'border-width': 3 }},
+            { selector: 'node.exit', style: { 'border-color': '#bd93f9', 'border-width': 3 }},
+            { selector: 'node.branchpoint', style: { 'border-color': '#ffb86c', 'border-width': 3 }},
+            { selector: 'node.visited', style: { 'background-color': '#2a4a6e' }},
+            { selector: 'node.current', style: {
+                'background-color': '#50fa7b',
+                'color': '#1a1a2e',
+                'border-color': '#50fa7b',
+                'font-weight': 'bold'
+            }},
+            { selector: 'node.dim', style: { 'opacity': 0.35 }},
+            { selector: 'edge', style: {
+                'width': 2,
+                'line-color': '#555',
+                'target-arrow-color': '#555',
+                'target-arrow-shape': 'triangle',
+                'curve-style': 'bezier',
+                'label': 'data(label)',
+                'font-size': '9px',
+                'color': '#888'
+            }},
+            { selector: 'edge.cleanup', style: {
+                'line-style': 'dashed',
+                'line-color': '#ff5555',
+                'target-arrow-color': '#ff5555'
+            }},
+            { selector: 'edge.taken', style: {
+                'line-color': '#50fa7b',
+                'target-arrow-color': '#50fa7b',
+                'width': 3
+            }}
+        ],
+        layout: { name: 'breadthfirst', directed: true, padding: 30, spacingFactor: 1.2 }
+    });
+
+    const state = { path: [], current: null, data: data, cy: cy, id: id };
+    explorers[id] = {
+        goTo: (blockId) => goToBlock(state, blockId),
+        goBack: () => goBack(state),
+        reset: () => resetExplorer(state)
+    };
+
+    cy.on('tap', 'node', (e) => goToBlock(state, parseInt(e.target.id().replace('bb', ''))));
+    cy.on('tap', 'edge', (e) => goToBlock(state, parseInt(e.target.target().id().replace('bb', ''))));
+
+    goToBlock(state, data.entry_block);
+}
+
+function buildElements(data) {
+    const nodes = data.blocks.map(b => ({
+        data: { id: 'bb' + b.id, label: 'bb' + b.id },
+        classes: b.role
+    }));
+    const edges = [];
+    for (const block of data.blocks) {
+        for (const edge of block.terminator.edges) {
+            edges.push({
+                data: { id: 'bb' + block.id + '-bb' + edge.target, source: 'bb' + block.id, target: 'bb' + edge.target, label: edge.label },
+                classes: edge.kind === 'cleanup' ? 'cleanup' : ''
+            });
+        }
+    }
+    return { nodes, edges };
+}
+
+function goToBlock(state, blockId) {
+    const { data, cy, id } = state;
+    if (blockId < 0 || blockId >= data.blocks.length) return;
+    const block = data.blocks[blockId];
+
+    if (state.current !== null && state.current !== blockId) {
+        if (state.path[state.path.length - 1] !== state.current) {
+            state.path.push(state.current);
+        }
+    }
+    state.current = blockId;
+
+    cy.nodes().removeClass('current visited dim');
+    cy.edges().removeClass('taken');
+    const visited = new Set([...state.path, blockId]);
+    state.path.forEach(v => cy.$('#bb' + v).addClass('visited'));
+    cy.$('#bb' + blockId).addClass('current');
+    cy.nodes().forEach(n => {
+        if (!visited.has(parseInt(n.id().replace('bb', '')))) n.addClass('dim');
+    });
+    for (let i = 0; i < state.path.length; i++) {
+        const from = state.path[i], to = i + 1 < state.path.length ? state.path[i + 1] : blockId;
+        cy.$('#bb' + from + '-bb' + to).addClass('taken');
+    }
+    cy.animate({ center: { eles: cy.$('#bb' + blockId) }, duration: 150 });
+
+    updateContext(state, block);
+    updatePath(state);
+}
+
+function goBack(state) {
+    if (state.path.length > 0) {
+        const prev = state.path.pop();
+        state.current = null;
+        goToBlock(state, prev);
+    }
+}
+
+function resetExplorer(state) {
+    state.path = [];
+    state.current = null;
+    state.cy.nodes().removeClass('current visited dim');
+    state.cy.edges().removeClass('taken');
+    goToBlock(state, state.data.entry_block);
+}
+
+function updateContext(state, block) {
+    const { id } = state;
+    document.getElementById('block-' + id).textContent = 'bb' + block.id;
+    const badge = document.getElementById('role-' + id);
+    badge.textContent = block.role;
+    badge.className = 'badge ' + block.role;
+    document.getElementById('summary-' + id).textContent = block.summary;
+
+    const stmts = document.getElementById('stmts-' + id);
+    stmts.innerHTML = block.statements.length === 0 ? '<li style="color:#888">(none)</li>' :
+        block.statements.map(s => '<li><span class="mir">' + esc(s.mir) + '</span><span class="annotation">' + esc(s.annotation) + '</span></li>').join('');
+
+    document.getElementById('term-' + id).innerHTML =
+        '<span class="term">' + esc(block.terminator.mir) + '</span><span class="annotation">' + esc(block.terminator.annotation) + '</span>';
+
+    const edges = document.getElementById('edges-' + id);
+    edges.innerHTML = block.terminator.edges.map(e =>
+        '<button class="edge-btn' + (e.kind === 'cleanup' ? ' cleanup' : '') + '" onclick="explorers[\'' + id + '\'].goTo(' + e.target + ')">' +
+        '<span class="target">→ bb' + e.target + '</span> ' + (e.label ? '<span class="label">' + esc(e.label) + '</span>' : '') +
+        '<span class="hint">' + esc(e.annotation) + '</span></button>'
+    ).join('');
+}
+
+function updatePath(state) {
+    const crumb = document.querySelector('#path-' + state.id + ' .breadcrumb');
+    const full = [...state.path, state.current];
+    crumb.innerHTML = full.map((b, i) =>
+        '<span class="crumb' + (i === full.length - 1 ? ' current' : '') + '">bb' + b + '</span>'
+    ).join(' → ');
+}
+
+function esc(s) {
+    if (!s) return '';
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+    </script>
 </body>
 </html>
