@@ -153,6 +153,48 @@
         .graph-controls button:hover {
             background: var(--border);
         }
+        .fullscreen-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            background: var(--bg);
+            flex-direction: column;
+        }
+        .fullscreen-overlay.active {
+            display: flex;
+        }
+        .fullscreen-overlay .fs-controls {
+            flex-shrink: 0;
+            padding: 0.5rem 1rem;
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-section);
+            border-bottom: 1px solid var(--border);
+        }
+        .fullscreen-overlay .fs-controls button {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .fullscreen-overlay .fs-controls button:hover {
+            background: var(--border);
+        }
+        .fullscreen-overlay .fs-graph {
+            flex: 1;
+            overflow: hidden;
+        }
+        .fullscreen-overlay .fs-graph svg {
+            width: 100%;
+            height: 100%;
+        }
         .source-section {
             background: var(--bg-section);
             border-radius: 8px;
@@ -218,6 +260,7 @@ fn main() {
         <button onclick="panZoom.zoomOut()">Zoom Out</button>
         <button onclick="panZoom.resetZoom();panZoom.resetPan()">Reset</button>
         <button onclick="panZoom.fit()">Fit</button>
+        <button onclick="enterFullscreen()">Fullscreen</button>
     </div>
     <div class="graph-container">
 <svg id="call-graph"
@@ -338,21 +381,23 @@ fn main() {
 <polygon fill="none" stroke="red" points="205.62,-1402 149.12,-1402 149.12,-1366 205.62,-1366 205.62,-1402"/>
 <text xml:space="preserve" text-anchor="middle" x="177.38" y="-1378.95" font-family="Times,serif" font-size="14.00">NoOp: </text>
 </g>
-<!-- X6bb468e2827eeeb7_0 -->
+<!-- X3a5fc2ed8b967f9b_0 -->
 <g id="node3" class="node">
+<title>X3a5fc2ed8b967f9b_0</title>
+<polygon fill="none" stroke="red" points="937.5,-562 745.25,-562 745.25,-488 937.5,-488 937.5,-562"/>
+<text xml:space="preserve" text-anchor="middle" x="841.38" y="-544.7" font-family="Times,serif" font-size="14.00">_ZN4core3fmt3num3imp51_$L</text>
+<text xml:space="preserve" text-anchor="middle" x="841.38" y="-528.2" font-family="Times,serif" font-size="14.00">T$impl$u20$core..fmt..Dis</text>
+<text xml:space="preserve" text-anchor="middle" x="841.38" y="-511.7" font-family="Times,serif" font-size="14.00">play$u20$for$u20$u8$GT$3f</text>
+<text xml:space="preserve" text-anchor="middle" x="841.38" y="-495.2" font-family="Times,serif" font-size="14.00">mt17hcb5a8318d6a04224E</text>
+</g>
+<!-- X6bb468e2827eeeb7_0 -->
+<g id="node4" class="node">
 <title>X6bb468e2827eeeb7_0</title>
 <polygon fill="none" stroke="red" points="1263.25,-742.5 1069.5,-742.5 1069.5,-668.5 1263.25,-668.5 1263.25,-742.5"/>
 <text xml:space="preserve" text-anchor="middle" x="1166.38" y="-725.2" font-family="Times,serif" font-size="14.00">_ZN4core3fmt3num52_$LT$im</text>
 <text xml:space="preserve" text-anchor="middle" x="1166.38" y="-708.7" font-family="Times,serif" font-size="14.00">pl$u20$core..fmt..LowerHe</text>
 <text xml:space="preserve" text-anchor="middle" x="1166.38" y="-692.2" font-family="Times,serif" font-size="14.00">x$u20$for$u20$u8$GT$3fmt1</text>
 <text xml:space="preserve" text-anchor="middle" x="1166.38" y="-675.7" font-family="Times,serif" font-size="14.00">7h27a5398f4d8ad9d3E</text>
-</g>
-<!-- Xe8a26c2980749453_0 -->
-<g id="node4" class="node">
-<title>Xe8a26c2980749453_0</title>
-<polygon fill="none" stroke="red" points="1395,-314 1217.75,-314 1217.75,-273 1395,-273 1395,-314"/>
-<text xml:space="preserve" text-anchor="middle" x="1306.38" y="-296.7" font-family="Times,serif" font-size="14.00">_ZN4core6option13unwrap_f</text>
-<text xml:space="preserve" text-anchor="middle" x="1306.38" y="-280.2" font-family="Times,serif" font-size="14.00">ailed17h70bb8fac4436ed8fE</text>
 </g>
 <!-- X9049997225d80a2c_0 -->
 <g id="node5" class="node">
@@ -361,8 +406,30 @@ fn main() {
 <text xml:space="preserve" text-anchor="middle" x="2138.38" y="-137.2" font-family="Times,serif" font-size="14.00">_ZN4core6result13unwrap_f</text>
 <text xml:space="preserve" text-anchor="middle" x="2138.38" y="-120.7" font-family="Times,serif" font-size="14.00">ailed17h4597ccbf28054a7dE</text>
 </g>
-<!-- X627bf46c745b6e09_0 -->
+<!-- X5eb86185c1cf8f06_0 -->
 <g id="node6" class="node">
+<title>X5eb86185c1cf8f06_0</title>
+<polygon fill="none" stroke="red" points="4089.12,-1107 3921.62,-1107 3921.62,-1049.5 4089.12,-1049.5 4089.12,-1107"/>
+<text xml:space="preserve" text-anchor="middle" x="4005.38" y="-1089.7" font-family="Times,serif" font-size="14.00">_ZN3std2rt19lang_start_in</text>
+<text xml:space="preserve" text-anchor="middle" x="4005.38" y="-1073.2" font-family="Times,serif" font-size="14.00">ternal17h035df9ff6960926a</text>
+<text xml:space="preserve" text-anchor="middle" x="4005.38" y="-1056.7" font-family="Times,serif" font-size="14.00">E</text>
+</g>
+<!-- X3c6542d96320ad67_0 -->
+<g id="node7" class="node">
+<title>X3c6542d96320ad67_0</title>
+<polygon fill="none" stroke="red" points="6251.5,-154.5 6179.25,-154.5 6179.25,-113.5 6251.5,-113.5 6251.5,-154.5"/>
+<text xml:space="preserve" text-anchor="middle" x="6215.38" y="-137.2" font-family="Times,serif" font-size="14.00">Intr: </text>
+<text xml:space="preserve" text-anchor="middle" x="6215.38" y="-120.7" font-family="Times,serif" font-size="14.00">black_box</text>
+</g>
+<!-- Xe8a26c2980749453_0 -->
+<g id="node8" class="node">
+<title>Xe8a26c2980749453_0</title>
+<polygon fill="none" stroke="red" points="1395,-314 1217.75,-314 1217.75,-273 1395,-273 1395,-314"/>
+<text xml:space="preserve" text-anchor="middle" x="1306.38" y="-296.7" font-family="Times,serif" font-size="14.00">_ZN4core6option13unwrap_f</text>
+<text xml:space="preserve" text-anchor="middle" x="1306.38" y="-280.2" font-family="Times,serif" font-size="14.00">ailed17h70bb8fac4436ed8fE</text>
+</g>
+<!-- X627bf46c745b6e09_0 -->
+<g id="node9" class="node">
 <title>X627bf46c745b6e09_0</title>
 <polygon fill="none" stroke="red" points="1149.25,-562 955.5,-562 955.5,-488 1149.25,-488 1149.25,-562"/>
 <text xml:space="preserve" text-anchor="middle" x="1052.38" y="-544.7" font-family="Times,serif" font-size="14.00">_ZN4core3fmt3num52_$LT$im</text>
@@ -370,36 +437,12 @@ fn main() {
 <text xml:space="preserve" text-anchor="middle" x="1052.38" y="-511.7" font-family="Times,serif" font-size="14.00">x$u20$for$u20$u8$GT$3fmt1</text>
 <text xml:space="preserve" text-anchor="middle" x="1052.38" y="-495.2" font-family="Times,serif" font-size="14.00">7hd269a011e3ca7289E</text>
 </g>
-<!-- X5eb86185c1cf8f06_0 -->
-<g id="node7" class="node">
-<title>X5eb86185c1cf8f06_0</title>
-<polygon fill="none" stroke="red" points="4089.12,-1107 3921.62,-1107 3921.62,-1049.5 4089.12,-1049.5 4089.12,-1107"/>
-<text xml:space="preserve" text-anchor="middle" x="4005.38" y="-1089.7" font-family="Times,serif" font-size="14.00">_ZN3std2rt19lang_start_in</text>
-<text xml:space="preserve" text-anchor="middle" x="4005.38" y="-1073.2" font-family="Times,serif" font-size="14.00">ternal17h035df9ff6960926a</text>
-<text xml:space="preserve" text-anchor="middle" x="4005.38" y="-1056.7" font-family="Times,serif" font-size="14.00">E</text>
-</g>
-<!-- X3a5fc2ed8b967f9b_0 -->
-<g id="node8" class="node">
-<title>X3a5fc2ed8b967f9b_0</title>
-<polygon fill="none" stroke="red" points="937.5,-562 745.25,-562 745.25,-488 937.5,-488 937.5,-562"/>
-<text xml:space="preserve" text-anchor="middle" x="841.38" y="-544.7" font-family="Times,serif" font-size="14.00">_ZN4core3fmt3num3imp51_$L</text>
-<text xml:space="preserve" text-anchor="middle" x="841.38" y="-528.2" font-family="Times,serif" font-size="14.00">T$impl$u20$core..fmt..Dis</text>
-<text xml:space="preserve" text-anchor="middle" x="841.38" y="-511.7" font-family="Times,serif" font-size="14.00">play$u20$for$u20$u8$GT$3f</text>
-<text xml:space="preserve" text-anchor="middle" x="841.38" y="-495.2" font-family="Times,serif" font-size="14.00">mt17hcb5a8318d6a04224E</text>
-</g>
 <!-- X210a8e5fe9313c81_0 -->
-<g id="node9" class="node">
+<g id="node10" class="node">
 <title>X210a8e5fe9313c81_0</title>
 <polygon fill="none" stroke="red" points="2033.12,-154.5 1859.62,-154.5 1859.62,-113.5 2033.12,-113.5 2033.12,-154.5"/>
 <text xml:space="preserve" text-anchor="middle" x="1946.38" y="-137.2" font-family="Times,serif" font-size="14.00">_ZN4core9panicking5panic1</text>
 <text xml:space="preserve" text-anchor="middle" x="1946.38" y="-120.7" font-family="Times,serif" font-size="14.00">7h37379bf3ce79a0d7E</text>
-</g>
-<!-- X3c6542d96320ad67_0 -->
-<g id="node10" class="node">
-<title>X3c6542d96320ad67_0</title>
-<polygon fill="none" stroke="red" points="6251.5,-154.5 6179.25,-154.5 6179.25,-113.5 6251.5,-113.5 6251.5,-154.5"/>
-<text xml:space="preserve" text-anchor="middle" x="6215.38" y="-137.2" font-family="Times,serif" font-size="14.00">Intr: </text>
-<text xml:space="preserve" text-anchor="middle" x="6215.38" y="-120.7" font-family="Times,serif" font-size="14.00">black_box</text>
 </g>
 <!-- node_2 -->
 <g id="node11" class="node">
@@ -1319,7 +1362,44 @@ fn main() {
 </svg>
     </div>
     </details>
-    <script>hljs.highlightAll(); var panZoom = svgPanZoom("#call-graph", {zoomEnabled:true, controlIconsEnabled:false, fit:true, center:true, minZoom:0.1, maxZoom:20});</script>
+    <div class="fullscreen-overlay" id="fs-overlay">
+      <div class="fs-controls">
+        <button onclick="fsPanZoom.zoomIn()">Zoom In</button>
+        <button onclick="fsPanZoom.zoomOut()">Zoom Out</button>
+        <button onclick="fsPanZoom.resetZoom();fsPanZoom.resetPan()">Reset</button>
+        <button onclick="fsPanZoom.fit();fsPanZoom.center()">Fit</button>
+        <button onclick="exitFullscreen()">Exit</button>
+      </div>
+      <div class="fs-graph" id="fs-graph"></div>
+    </div>
+    <script>
+      hljs.highlightAll();
+      var panZoom = svgPanZoom("#call-graph", {zoomEnabled:true, controlIconsEnabled:false, fit:true, center:true, minZoom:0.1, maxZoom:20});
+      var fsPanZoom = null;
+      function enterFullscreen() {
+        var overlay = document.getElementById("fs-overlay");
+        var fsGraph = document.getElementById("fs-graph");
+        var svg = document.getElementById("call-graph").cloneNode(true);
+        svg.id = "fs-call-graph";
+        fsGraph.innerHTML = "";
+        fsGraph.appendChild(svg);
+        overlay.requestFullscreen().then(function() {
+          overlay.classList.add("active");
+          fsPanZoom = svgPanZoom("#fs-call-graph", {zoomEnabled:true, controlIconsEnabled:false, fit:true, center:true, minZoom:0.1, maxZoom:20});
+        });
+      }
+      function exitFullscreen() {
+        if (document.fullscreenElement) document.exitFullscreen();
+      }
+      document.addEventListener("fullscreenchange", function() {
+        var overlay = document.getElementById("fs-overlay");
+        if (!document.fullscreenElement) {
+          overlay.classList.remove("active");
+          if (fsPanZoom) { fsPanZoom.destroy(); fsPanZoom = null; }
+        }
+      });
+      document.addEventListener("keydown", function(e) { if (e.key === "Escape" && document.fullscreenElement) exitFullscreen(); });
+    </script>
     <section class="function">
     <h2>main</h2>
     <p class="fn-meta">6 basic blocks — <code>main</code></p>
