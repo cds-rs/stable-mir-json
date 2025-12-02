@@ -258,6 +258,48 @@ fn generate_html(smir: &SmirJson) -> String {
         .graph-controls button:hover {{
             background: var(--border);
         }}
+        .fullscreen-overlay {{
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            background: var(--bg);
+            flex-direction: column;
+        }}
+        .fullscreen-overlay.active {{
+            display: flex;
+        }}
+        .fullscreen-overlay .fs-controls {{
+            flex-shrink: 0;
+            padding: 0.5rem 1rem;
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-section);
+            border-bottom: 1px solid var(--border);
+        }}
+        .fullscreen-overlay .fs-controls button {{
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }}
+        .fullscreen-overlay .fs-controls button:hover {{
+            background: var(--border);
+        }}
+        .fullscreen-overlay .fs-graph {{
+            flex: 1;
+            overflow: hidden;
+        }}
+        .fullscreen-overlay .fs-graph svg {{
+            width: 100%;
+            height: 100%;
+        }}
         .source-section {{
             background: var(--bg-section);
             border-radius: 8px;
