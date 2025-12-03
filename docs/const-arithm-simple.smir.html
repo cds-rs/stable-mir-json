@@ -465,19 +465,19 @@ fn main() {
 <text xml:space="preserve" text-anchor="middle" x="302.38" y="-419.7" font-family="Times,serif" font-size="14.00">_ZN4core9panicking5panic1</text>
 <text xml:space="preserve" text-anchor="middle" x="302.38" y="-403.2" font-family="Times,serif" font-size="14.00">7h37379bf3ce79a0d7E</text>
 </g>
-<!-- X8b0ac2e54b9a91_0 -->
-<g id="node3" class="node">
-<title>X8b0ac2e54b9a91_0</title>
-<polygon fill="none" stroke="red" points="585.62,-1145.5 529.12,-1145.5 529.12,-1109.5 585.62,-1109.5 585.62,-1145.5"/>
-<text xml:space="preserve" text-anchor="middle" x="557.38" y="-1122.45" font-family="Times,serif" font-size="14.00">NoOp: </text>
-</g>
 <!-- X5eb86185c1cf8f06_0 -->
-<g id="node4" class="node">
+<g id="node3" class="node">
 <title>X5eb86185c1cf8f06_0</title>
 <polygon fill="none" stroke="red" points="1589.12,-883.5 1421.62,-883.5 1421.62,-826 1589.12,-826 1589.12,-883.5"/>
 <text xml:space="preserve" text-anchor="middle" x="1505.38" y="-866.2" font-family="Times,serif" font-size="14.00">_ZN3std2rt19lang_start_in</text>
 <text xml:space="preserve" text-anchor="middle" x="1505.38" y="-849.7" font-family="Times,serif" font-size="14.00">ternal17h035df9ff6960926a</text>
 <text xml:space="preserve" text-anchor="middle" x="1505.38" y="-833.2" font-family="Times,serif" font-size="14.00">E</text>
+</g>
+<!-- X8b0ac2e54b9a91_0 -->
+<g id="node4" class="node">
+<title>X8b0ac2e54b9a91_0</title>
+<polygon fill="none" stroke="red" points="1564.62,-1145.5 1508.12,-1145.5 1508.12,-1109.5 1564.62,-1109.5 1564.62,-1145.5"/>
+<text xml:space="preserve" text-anchor="middle" x="1536.38" y="-1122.45" font-family="Times,serif" font-size="14.00">NoOp: </text>
 </g>
 <!-- X3c6542d96320ad67_0 -->
 <g id="node5" class="node">
@@ -996,7 +996,7 @@ fn main() {
         </div>
         <script>
             (function() {
-                const data = {"name":"main","short_name":"main","blocks":[{"id":0,"statements":[{"mir":"_2 = 42","annotation":"Load constant"},{"mir":"_3 = 0","annotation":"Load constant"}],"terminator":{"kind":"call","mir":"_1 = test(move _2, move _3)","annotation":"Call test","edges":[{"target":1,"label":"return","kind":"normal","annotation":"After test returns"}]},"predecessors":[],"role":"entry","summary":"Entry point"},{"id":1,"statements":[],"terminator":{"kind":"switch","mir":"switchInt(_1)","annotation":"Branch based on value of _1","edges":[{"target":2,"label":"0","kind":"branch","annotation":"If _1 == 0"},{"target":3,"label":"else","kind":"otherwise","annotation":"Otherwise (no match)"}]},"predecessors":[0],"role":"branchpoint","summary":"Branches: Branch based on value of _1"},{"id":2,"statements":[],"terminator":{"kind":"call","mir":"_4 = panic([16 bytes])","annotation":"Call panic","edges":[]},"predecessors":[1],"role":"linear","summary":"Call panic"},{"id":3,"statements":[],"terminator":{"kind":"return","mir":"return","annotation":"Return from function","edges":[]},"predecessors":[1],"role":"exit","summary":"Function returns"}],"locals":["_0: ()","_1: bool","_2: usize","_3: usize","_4: !"],"entry_block":0};
+                const data = {"name":"main","short_name":"main","blocks":[{"id":0,"statements":[{"mir":"_2 = 42","annotation":"Load constant"},{"mir":"_3 = 0","annotation":"Load constant"}],"terminator":{"kind":"call","mir":"_1 = test(move _2, move _3)","annotation":"Call test","edges":[{"target":1,"label":"return","kind":"normal","annotation":"After test returns"}]},"predecessors":[],"role":"entry","summary":"Entry point"},{"id":1,"statements":[],"terminator":{"kind":"switch","mir":"switchInt(_1)","annotation":"Branch based on value of _1","edges":[{"target":2,"label":"0","kind":"branch","annotation":"If _1 == 0"},{"target":3,"label":"else","kind":"otherwise","annotation":"Otherwise (no match)"}]},"predecessors":[0],"role":"branchpoint","summary":"Branches: Branch based on value of _1"},{"id":2,"statements":[],"terminator":{"kind":"call","mir":"_4 = panic([16 bytes])","annotation":"Call panic","edges":[]},"predecessors":[1],"role":"linear","summary":"Call panic"},{"id":3,"statements":[],"terminator":{"kind":"return","mir":"return","annotation":"Return from function","edges":[]},"predecessors":[1],"role":"exit","summary":"Function returns"}],"locals":[{"name":"_0","ty":"()","source_name":null,"assignments":[]},{"name":"_1","ty":"bool","source_name":"z","assignments":[]},{"name":"_2","ty":"usize","source_name":null,"assignments":[{"block_id":0,"value":"42"}]},{"name":"_3","ty":"usize","source_name":null,"assignments":[{"block_id":0,"value":"0"}]},{"name":"_4","ty":"!","source_name":null,"assignments":[]}],"entry_block":0};
                 if (typeof explorers === 'undefined') window.explorers = {};
 
                 // Wait for details to open before initializing
@@ -1112,7 +1112,7 @@ fn main() {
         </div>
         <script>
             (function() {
-                const data = {"name":"test","short_name":"test","blocks":[{"id":0,"statements":[{"mir":"_0 = _1 > _2","annotation":"Comparison operation"}],"terminator":{"kind":"return","mir":"return","annotation":"Return from function","edges":[]},"predecessors":[],"role":"entry","summary":"Entry point"}],"locals":["_0: bool","_1: usize","_2: usize"],"entry_block":0};
+                const data = {"name":"test","short_name":"test","blocks":[{"id":0,"statements":[{"mir":"_0 = _1 > _2","annotation":"Greater than operation"}],"terminator":{"kind":"return","mir":"return","annotation":"Return from function","edges":[]},"predecessors":[],"role":"entry","summary":"Entry point"}],"locals":[{"name":"_0","ty":"bool","source_name":null,"assignments":[{"block_id":0,"value":"_1 > _2"}]},{"name":"_1","ty":"usize","source_name":"x","assignments":[]},{"name":"_2","ty":"usize","source_name":"y","assignments":[]}],"entry_block":0};
                 if (typeof explorers === 'undefined') window.explorers = {};
 
                 // Wait for details to open before initializing
@@ -1152,9 +1152,21 @@ fn main() {
 
     <script>
     
+function renderLocalHtml(local, escapeHtml) {
+    const srcName = local.source_name
+        ? ` <span class="annotation">(${escapeHtml(local.source_name)})</span>`
+        : '';
+    const assigns = local.assignments.length > 0
+        ? local.assignments.map(a => `bb${a.block_id}: ${escapeHtml(a.value)}`).join(', ')
+        : '(arg/ret)';
+    return `<li><span class="mir">${escapeHtml(local.name)}: ${escapeHtml(local.ty)}</span>${srcName}
+           <br><span class="annotation" style="margin-left:1em">${assigns}</span></li>`;
+}
+
+    
 function initExplorer(id, data) {
     const cy = cytoscape({
-        container: document.getElementById('cy-' + id),
+        container: document.getElementById(`cy-${id}`),
         elements: buildElements(data),
         style: [
             { selector: 'node', style: {
@@ -1221,14 +1233,19 @@ function initExplorer(id, data) {
 
 function buildElements(data) {
     const nodes = data.blocks.map(b => ({
-        data: { id: 'bb' + b.id, label: 'bb' + b.id },
+        data: { id: `bb${b.id}`, label: `bb${b.id}` },
         classes: b.role
     }));
     const edges = [];
     for (const block of data.blocks) {
         for (const edge of block.terminator.edges) {
             edges.push({
-                data: { id: 'bb' + block.id + '-bb' + edge.target, source: 'bb' + block.id, target: 'bb' + edge.target, label: edge.label },
+                data: {
+                    id: `bb${block.id}-bb${edge.target}`,
+                    source: `bb${block.id}`,
+                    target: `bb${edge.target}`,
+                    label: edge.label
+                },
                 classes: edge.kind === 'cleanup' ? 'cleanup' : ''
             });
         }
@@ -1251,16 +1268,16 @@ function goToBlock(state, blockId) {
     cy.nodes().removeClass('current visited dim');
     cy.edges().removeClass('taken');
     const visited = new Set([...state.path, blockId]);
-    state.path.forEach(v => cy.$('#bb' + v).addClass('visited'));
-    cy.$('#bb' + blockId).addClass('current');
+    state.path.forEach(v => cy.$(`#bb${v}`).addClass('visited'));
+    cy.$(`#bb${blockId}`).addClass('current');
     cy.nodes().forEach(n => {
         if (!visited.has(parseInt(n.id().replace('bb', '')))) n.addClass('dim');
     });
     for (let i = 0; i < state.path.length; i++) {
         const from = state.path[i], to = i + 1 < state.path.length ? state.path[i + 1] : blockId;
-        cy.$('#bb' + from + '-bb' + to).addClass('taken');
+        cy.$(`#bb${from}-bb${to}`).addClass('taken');
     }
-    cy.animate({ center: { eles: cy.$('#bb' + blockId) }, duration: 150 });
+    cy.animate({ center: { eles: cy.$(`#bb${blockId}`) }, duration: 150 });
 
     updateContext(state, block);
     updatePath(state);
@@ -1284,40 +1301,46 @@ function resetExplorer(state) {
 
 function updateContext(state, block) {
     const { id, data } = state;
-    document.getElementById('block-' + id).textContent = 'bb' + block.id;
-    const badge = document.getElementById('role-' + id);
+    document.getElementById(`block-${id}`).textContent = `bb${block.id}`;
+    const badge = document.getElementById(`role-${id}`);
     badge.textContent = block.role;
-    badge.className = 'badge ' + block.role;
-    document.getElementById('summary-' + id).textContent = block.summary;
+    badge.className = `badge ${block.role}`;
+    document.getElementById(`summary-${id}`).textContent = block.summary;
 
     // Populate locals
-    const localsList = document.getElementById('locals-' + id);
-    localsList.innerHTML = data.locals.map(l => '<li>' + esc(l) + '</li>').join('');
+    const localsList = document.getElementById(`locals-${id}`);
+    localsList.innerHTML = data.locals.map(l => renderLocalHtml(l, escapeHtml)).join('');
 
-    const stmts = document.getElementById('stmts-' + id);
-    stmts.innerHTML = block.statements.length === 0 ? '<li style="color:#888">(none)</li>' :
-        block.statements.map(s => '<li><span class="mir">' + esc(s.mir) + '</span><span class="annotation">' + esc(s.annotation) + '</span></li>').join('');
+    const stmts = document.getElementById(`stmts-${id}`);
+    stmts.innerHTML = block.statements.length === 0
+        ? '<li style="color:#888">(none)</li>'
+        : block.statements.map(s =>
+            `<li><span class="mir">${escapeHtml(s.mir)}</span><span class="annotation">${escapeHtml(s.annotation)}</span></li>`
+          ).join('');
 
-    document.getElementById('term-' + id).innerHTML =
-        '<span class="term">' + esc(block.terminator.mir) + '</span><span class="annotation">' + esc(block.terminator.annotation) + '</span>';
+    document.getElementById(`term-${id}`).innerHTML =
+        `<span class="term">${escapeHtml(block.terminator.mir)}</span><span class="annotation">${escapeHtml(block.terminator.annotation)}</span>`;
 
-    const edges = document.getElementById('edges-' + id);
-    edges.innerHTML = block.terminator.edges.map(e =>
-        '<button class="edge-btn' + (e.kind === 'cleanup' ? ' cleanup' : '') + '" onclick="explorers[\'' + id + '\'].goTo(' + e.target + ')">' +
-        '<span class="target">→ bb' + e.target + '</span> ' + (e.label ? '<span class="label">' + esc(e.label) + '</span>' : '') +
-        '<span class="hint">' + esc(e.annotation) + '</span></button>'
-    ).join('');
+    const edges = document.getElementById(`edges-${id}`);
+    edges.innerHTML = block.terminator.edges.map(e => {
+        const cleanupClass = e.kind === 'cleanup' ? ' cleanup' : '';
+        const labelSpan = e.label ? `<span class="label">${escapeHtml(e.label)}</span>` : '';
+        return `<button class="edge-btn${cleanupClass}" onclick="explorers['${id}'].goTo(${e.target})">
+            <span class="target">→ bb${e.target}</span> ${labelSpan}
+            <span class="hint">${escapeHtml(e.annotation)}</span></button>`;
+    }).join('');
 }
 
 function updatePath(state) {
-    const crumb = document.querySelector('#path-' + state.id + ' .breadcrumb');
+    const crumb = document.querySelector(`#path-${state.id} .breadcrumb`);
     const full = [...state.path, state.current];
-    crumb.innerHTML = full.map((b, i) =>
-        '<span class="crumb' + (i === full.length - 1 ? ' current' : '') + '">bb' + b + '</span>'
-    ).join(' → ');
+    crumb.innerHTML = full.map((b, i) => {
+        const currentClass = i === full.length - 1 ? ' current' : '';
+        return `<span class="crumb${currentClass}">bb${b}</span>`;
+    }).join(' → ');
 }
 
-function esc(s) {
+function escapeHtml(s) {
     if (!s) return '';
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
