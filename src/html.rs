@@ -406,6 +406,7 @@ fn generate_html(smir: &SmirJson) -> String {
         .explorer-context .mir {{ color: var(--green); }}
         .explorer-context .annotation {{ color: #bd93f9; font-size: 0.75rem; display: block; }}
         .explorer-context .term {{ color: var(--pink); }}
+        .explorer-context .locals-list {{ max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim); }}
         .explorer-edges {{
             display: flex;
             flex-direction: column;
@@ -541,6 +542,8 @@ fn render_explorer_panel(fn_id: &str, explorer_fn: &ExplorerFunction) -> String 
                 <h3 id="block-{id}">bb0</h3>
                 <span class="badge" id="role-{id}">entry</span>
                 <div class="summary" id="summary-{id}"></div>
+                <h4>Locals</h4>
+                <ul id="locals-{id}" class="locals-list"></ul>
                 <h4>Statements</h4>
                 <ul id="stmts-{id}"></ul>
                 <h4>Terminator</h4>
@@ -1173,12 +1176,16 @@ function resetExplorer(state) {
 }
 
 function updateContext(state, block) {
-    const { id } = state;
+    const { id, data } = state;
     document.getElementById('block-' + id).textContent = 'bb' + block.id;
     const badge = document.getElementById('role-' + id);
     badge.textContent = block.role;
     badge.className = 'badge ' + block.role;
     document.getElementById('summary-' + id).textContent = block.summary;
+
+    // Populate locals
+    const localsList = document.getElementById('locals-' + id);
+    localsList.innerHTML = data.locals.map(l => '<li>' + esc(l) + '</li>').join('');
 
     const stmts = document.getElementById('stmts-' + id);
     stmts.innerHTML = block.statements.length === 0 ? '<li style="color:#888">(none)</li>' :

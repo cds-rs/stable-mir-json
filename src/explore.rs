@@ -698,8 +698,8 @@ fn generate_explore_html(smir: &SmirJson) -> String {
 
             <div id="block-summary"></div>
 
-            <section id="locals-section" class="collapsed">
-                <h3 onclick="toggleSection('locals-section')">Locals ▸</h3>
+            <section id="locals-section">
+                <h3 onclick="toggleSection('locals-section')">Locals ▾</h3>
                 <ul id="locals-list"></ul>
             </section>
 
