@@ -1,5 +1,5 @@
 [workspace]
-members = ["mir-explorer"]
+members = ["mir-explorer", "mir-tui"]
 
 [package]
 name = "stable_mir_json"

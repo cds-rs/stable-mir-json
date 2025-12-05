@@ -9,6 +9,7 @@
           "id": 0,
           "statements": [],
           "terminator": {
+            "source": "let ans = fibonacci(5);",
             "kind": "call",
             "mir": "_1 = fibonacci(5)",
             "annotation": "Call fibonacci",
@@ -29,6 +30,7 @@
           "id": 1,
           "statements": [],
           "terminator": {
+            "source": "assert!(ans == 5);",
             "kind": "switch",
             "mir": "switchInt(_1)",
             "annotation": "Branch based on value of _1",
@@ -57,6 +59,7 @@
           "id": 2,
           "statements": [],
           "terminator": {
+            "source": "}",
             "kind": "return",
             "mir": "return",
             "annotation": "Return from function",
@@ -72,6 +75,7 @@
           "id": 3,
           "statements": [],
           "terminator": {
+            "source": "assert!(ans == 5);",
             "kind": "call",
             "mir": "_2 = panic([16 bytes])",
             "annotation": "Call panic",
@@ -114,6 +118,7 @@
           "id": 0,
           "statements": [],
           "terminator": {
+            "source": "match n {",
             "kind": "switch",
             "mir": "switchInt(_1)",
             "annotation": "Branch based on value of _1",
@@ -146,11 +151,13 @@
           "id": 1,
           "statements": [
             {
+              "source": "_ => fibonacci(n - 2) + fibonacci(n - 1),",
               "mir": "_4 = checked(_1 - 2)",
               "annotation": "Checked Subtract (may panic)"
             }
           ],
           "terminator": {
+            "source": "_ => fibonacci(n - 2) + fibonacci(n - 1),",
             "kind": "assert",
             "mir": "assert(move _4.1 == false)",
             "annotation": "Panic if move _4.1 is true",
@@ -173,11 +180,13 @@
           "id": 2,
           "statements": [
             {
+              "source": "1 => 1,",
               "mir": "_0 = 1",
               "annotation": "Load constant"
             }
           ],
           "terminator": {
+            "source": "1 => 1,",
             "kind": "goto",
             "mir": "goto bb9",
             "annotation": "Continue to next block",
@@ -200,11 +209,13 @@
           "id": 3,
           "statements": [
             {
+              "source": "0 => 0,",
               "mir": "_0 = 0",
               "annotation": "Load constant"
             }
           ],
           "terminator": {
+            "source": "0 => 0,",
             "kind": "goto",
             "mir": "goto bb9",
             "annotation": "Continue to next block",
@@ -227,11 +238,13 @@
           "id": 4,
           "statements": [
             {
+              "source": "_ => fibonacci(n - 2) + fibonacci(n - 1),",
               "mir": "_3 = move _4.0",
               "annotation": "Move value"
             }
           ],
           "terminator": {
+            "source": "_ => fibonacci(n - 2) + fibonacci(n - 1),",
             "kind": "call",
             "mir": "_2 = fibonacci(move _3)",
             "annotation": "RECURSIVE call to fibonacci",
@@ -254,11 +267,13 @@
           "id": 5,
           "statements": [
             {
+              "source": "_ => fibonacci(n - 2) + fibonacci(n - 1),",
               "mir": "_7 = checked(_1 - 1)",
               "annotation": "Checked Subtract (may panic)"
             }
           ],
           "terminator": {
+            "source": "_ => fibonacci(n - 2) + fibonacci(n - 1),",
             "kind": "assert",
             "mir": "assert(move _7.1 == false)",
             "annotation": "Panic if move _7.1 is true",
@@ -281,11 +296,13 @@
           "id": 6,
           "statements": [
             {
+              "source": "_ => fibonacci(n - 2) + fibonacci(n - 1),",
               "mir": "_6 = move _7.0",
               "annotation": "Move value"
             }
           ],
           "terminator": {
+            "source": "_ => fibonacci(n - 2) + fibonacci(n - 1),",
             "kind": "call",
             "mir": "_5 = fibonacci(move _6)",
             "annotation": "RECURSIVE call to fibonacci",
@@ -308,11 +325,13 @@
           "id": 7,
           "statements": [
             {
+              "source": "_ => fibonacci(n - 2) + fibonacci(n - 1),",
               "mir": "_8 = checked(_2 + _5)",
               "annotation": "Checked Add (may panic)"
             }
           ],
           "terminator": {
+            "source": "_ => fibonacci(n - 2) + fibonacci(n - 1),",
             "kind": "assert",
             "mir": "assert(move _8.1 == false)",
             "annotation": "Panic if move _8.1 is true",
@@ -335,11 +354,13 @@
           "id": 8,
           "statements": [
             {
+              "source": "_ => fibonacci(n - 2) + fibonacci(n - 1),",
               "mir": "_0 = move _8.0",
               "annotation": "Move value"
             }
           ],
           "terminator": {
+            "source": "_ => fibonacci(n - 2) + fibonacci(n - 1),",
             "kind": "goto",
             "mir": "goto bb9",
             "annotation": "Continue to next block",
@@ -362,6 +383,7 @@
           "id": 9,
           "statements": [],
           "terminator": {
+            "source": "}",
             "kind": "return",
             "mir": "return",
             "annotation": "Return from function",

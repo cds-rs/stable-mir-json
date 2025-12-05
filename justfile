@@ -322,3 +322,25 @@ html-wasm-file file: wasm-embed-build
     name=$(basename "{{file}}" .rs)
     cargo run -- --wasm-explore -Zno-codegen --out-dir output-html "{{file}}"
     echo "Generated: output-html/${name}.wasm-explore.html"
+
+# === TUI Explorer ===
+
+# Build TUI explorer
+tui-build:
+    cargo build -p mir-tui
+
+# Build TUI explorer (release)
+tui-release:
+    cargo build -p mir-tui --release
+
+# Run TUI on a file (generates JSON then opens TUI)
+tui file:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    name=$(basename "{{file}}" .rs)
+    cargo run -- --explore-json -Zno-codegen "{{file}}"
+    cargo run -p mir-tui -- "${name}.explore.json"
+
+# Run TUI on existing explore.json file
+tui-json file:
+    cargo run -p mir-tui -- "{{file}}"

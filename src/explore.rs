@@ -21,6 +21,9 @@ extern crate stable_mir;
 use stable_mir::mir::{
     BasicBlock, Body, Statement, StatementKind, Terminator, TerminatorKind, UnwindAction,
 };
+use stable_mir::ty::IndexedVal;
+
+use std::collections::HashMap;
 
 use crate::assets::{explorer, RENDER_LOCAL_JS};
 use crate::printer::{collect_smir, SmirJson};
@@ -29,6 +32,10 @@ use crate::render::{
     short_fn_name,
 };
 use crate::MonoItemKind;
+
+/// Span information: (filename, start_line, start_col, end_line, end_col)
+type SpanInfo = (String, usize, usize, usize, usize);
+type SpanIndex<'a> = HashMap<usize, &'a SpanInfo>;
 
 // =============================================================================
 // Explorer Data Model
@@ -62,6 +69,7 @@ pub struct ExplorerBlock {
 
 #[derive(Serialize)]
 struct ExplorerStmt {
+    source: String,
     mir: String,
     annotation: String,
 }
@@ -82,6 +90,7 @@ pub struct ExplorerLocal {
 
 #[derive(Serialize)]
 struct ExplorerTerminator {
+    source: String,
     kind: String,
     mir: String,
     annotation: String,
@@ -168,6 +177,9 @@ pub fn emit_explore_json(tcx: TyCtxt<'_>) {
 // =============================================================================
 
 pub fn build_explorer_data(smir: &SmirJson) -> ExplorerData {
+    // Build span index for source lookups
+    let span_index: SpanIndex = smir.spans.iter().map(|(id, info)| (*id, info)).collect();
+
     let mut functions = Vec::new();
 
     for item in &smir.items {
@@ -182,7 +194,7 @@ pub fn build_explorer_data(smir: &SmirJson) -> ExplorerData {
             continue;
         }
 
-        functions.push(build_explorer_function(name, body));
+        functions.push(build_explorer_function(name, body, &span_index));
     }
 
     ExplorerData {
@@ -191,7 +203,7 @@ pub fn build_explorer_data(smir: &SmirJson) -> ExplorerData {
     }
 }
 
-pub fn build_explorer_function(name: &str, body: &Body) -> ExplorerFunction {
+pub fn build_explorer_function(name: &str, body: &Body, span_index: &SpanIndex) -> ExplorerFunction {
     let short_name = short_fn_name(name);
 
     // Build blocks with edges
@@ -199,7 +211,7 @@ pub fn build_explorer_function(name: &str, body: &Body) -> ExplorerFunction {
         .blocks
         .iter()
         .enumerate()
-        .map(|(id, block)| build_explorer_block(id, block, &short_name))
+        .map(|(id, block)| build_explorer_block(id, block, &short_name, span_index))
         .collect();
 
     // Compute predecessors
@@ -287,10 +299,19 @@ pub fn build_explorer_function(name: &str, body: &Body) -> ExplorerFunction {
     }
 }
 
-fn build_explorer_block(id: usize, block: &BasicBlock, current_fn: &str) -> ExplorerBlock {
-    let statements: Vec<ExplorerStmt> = block.statements.iter().map(build_explorer_stmt).collect();
+fn build_explorer_block(
+    id: usize,
+    block: &BasicBlock,
+    current_fn: &str,
+    span_index: &SpanIndex,
+) -> ExplorerBlock {
+    let statements: Vec<ExplorerStmt> = block
+        .statements
+        .iter()
+        .map(|stmt| build_explorer_stmt(stmt, span_index))
+        .collect();
 
-    let terminator = build_explorer_terminator(&block.terminator, current_fn);
+    let terminator = build_explorer_terminator(&block.terminator, current_fn, span_index);
 
     ExplorerBlock {
         id,
@@ -302,7 +323,9 @@ fn build_explorer_block(id: usize, block: &BasicBlock, current_fn: &str) -> Expl
     }
 }
 
-fn build_explorer_stmt(stmt: &Statement) -> ExplorerStmt {
+fn build_explorer_stmt(stmt: &Statement, span_index: &SpanIndex) -> ExplorerStmt {
+    let source = extract_statement_source(stmt, span_index);
+
     let (mir, annotation) = match &stmt.kind {
         StatementKind::Assign(place, rvalue) => {
             let mir = format!("{} = {}", render_place(place), render_rvalue(rvalue));
@@ -321,10 +344,20 @@ fn build_explorer_stmt(stmt: &Statement) -> ExplorerStmt {
         _ => (format!("{:?}", stmt.kind), String::new()),
     };
 
-    ExplorerStmt { mir, annotation }
+    ExplorerStmt {
+        source,
+        mir,
+        annotation,
+    }
 }
 
-fn build_explorer_terminator(term: &Terminator, current_fn: &str) -> ExplorerTerminator {
+fn build_explorer_terminator(
+    term: &Terminator,
+    current_fn: &str,
+    span_index: &SpanIndex,
+) -> ExplorerTerminator {
+    let source = extract_terminator_source(term, span_index);
+
     let (kind, mir, annotation, edges) = match &term.kind {
         TerminatorKind::Goto { target } => (
             "goto".to_string(),
@@ -515,6 +548,7 @@ fn build_explorer_terminator(term: &Terminator, current_fn: &str) -> ExplorerTer
     };
 
     ExplorerTerminator {
+        source,
         kind,
         mir,
         annotation,
@@ -575,6 +609,79 @@ fn block_summary(block: &ExplorerBlock) -> String {
             }
         }
     }
+}
+
+// =============================================================================
+// Source Extraction
+// =============================================================================
+
+/// Extract a single source line from span info
+fn extract_source_line(info: &SpanInfo) -> Option<String> {
+    let (file, start_line, _, _, _) = info;
+
+    if file.contains(".rustup") || file.contains("no-location") {
+        return None;
+    }
+
+    let content = std::fs::read_to_string(file).ok()?;
+    let lines: Vec<&str> = content.lines().collect();
+    let line_idx = start_line.saturating_sub(1);
+
+    lines.get(line_idx).map(|s| s.trim().to_string())
+}
+
+/// Extract source line for a statement using its span
+fn extract_statement_source(stmt: &Statement, span_index: &SpanIndex) -> String {
+    use stable_mir::mir::{Operand, Rvalue};
+
+    // First try the statement's own span
+    let span_id = stmt.span.to_index();
+    if let Some(info) = span_index.get(&span_id) {
+        if let Some(line) = extract_source_line(info) {
+            return line;
+        }
+    }
+
+    // Fall back to operand spans for constants
+    let span_id = match &stmt.kind {
+        StatementKind::Assign(_, rvalue) => match rvalue {
+            Rvalue::Use(Operand::Constant(c)) => Some(c.span.to_index()),
+            _ => None,
+        },
+        _ => None,
+    };
+
+    span_id
+        .and_then(|id| span_index.get(&id))
+        .and_then(|info| extract_source_line(info))
+        .unwrap_or_default()
+}
+
+/// Extract source line for a terminator using its span
+fn extract_terminator_source(term: &Terminator, span_index: &SpanIndex) -> String {
+    use stable_mir::mir::Operand;
+
+    // First try the terminator's own span
+    let span_id = term.span.to_index();
+    if let Some(info) = span_index.get(&span_id) {
+        if let Some(line) = extract_source_line(info) {
+            return line;
+        }
+    }
+
+    // Fall back to operand spans for calls
+    let span_id = match &term.kind {
+        TerminatorKind::Call { func, .. } => match func {
+            Operand::Constant(c) => Some(c.span.to_index()),
+            _ => None,
+        },
+        _ => None,
+    };
+
+    span_id
+        .and_then(|id| span_index.get(&id))
+        .and_then(|info| extract_source_line(info))
+        .unwrap_or_default()
 }
 
 // =============================================================================

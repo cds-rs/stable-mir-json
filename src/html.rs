@@ -97,7 +97,7 @@ fn generate_html(smir: &SmirJson) -> String {
         ));
 
         // Explorer panel (collapsible)
-        let explorer_fn = build_explorer_function(name, body);
+        let explorer_fn = build_explorer_function(name, body, &span_index);
         content.push_str(&render_explorer_panel(&short_name, &explorer_fn));
 
         // Each basic block
