@@ -31,7 +31,6 @@ use super::util::{def_id_to_inst, fn_inst_for_ty};
 
 struct InternedValueCollector<'tcx, 'local> {
     tcx: TyCtxt<'tcx>,
-    _sym: String,
     locals: &'local [LocalDecl],
     link_map: &'local mut LinkMap<'tcx>,
     visited_allocs: &'local mut AllocMap,
@@ -165,15 +164,7 @@ fn collect_alloc(
                 entry.or_insert((stable_mir::ty::Ty::to_val(0), global_alloc.clone()));
             }
         }
-        GlobalAlloc::Static(_) => {
-            assert!(
-                kind.clone().builtin_deref(true).is_some(),
-                "Allocated pointer is not a built-in pointer type: {:?}",
-                kind
-            );
-            entry.or_insert((ty, global_alloc.clone()));
-        }
-        GlobalAlloc::VTable(_, _) => {
+        GlobalAlloc::Static(_) | GlobalAlloc::VTable(_, _) => {
             assert!(
                 kind.clone().builtin_deref(true).is_some(),
                 "Allocated pointer is not a built-in pointer type: {:?}",
@@ -345,48 +336,44 @@ pub(super) fn collect_interned_values<'tcx>(
         }
     }
     for item in items.iter() {
-        match &item {
-            MonoItem::Fn(inst) => {
-                if let Some(body) = inst.body() {
-                    InternedValueCollector {
-                        tcx,
-                        _sym: inst.mangled_name(),
-                        locals: body.locals(),
-                        link_map: &mut calls_map,
-                        visited_allocs: &mut visited_allocs,
-                        ty_visitor: &mut ty_visitor,
-                        spans: &mut span_map,
-                    }
-                    .visit_body(&body)
-                } else {
+        let (body, locals) = match &item {
+            MonoItem::Fn(inst) => match inst.body() {
+                Some(body) => {
+                    let locals = body.locals().to_vec();
+                    (body, locals)
+                }
+                None => {
                     eprintln!(
                         "Failed to retrive body for Instance of MonoItem::Fn {}",
                         inst.name()
-                    )
+                    );
+                    continue;
                 }
-            }
+            },
             MonoItem::Static(def) => {
                 let inst = def_id_to_inst(tcx, def.def_id());
-                if let Some(body) = inst.body() {
-                    InternedValueCollector {
-                        tcx,
-                        _sym: inst.mangled_name(),
-                        locals: &[],
-                        link_map: &mut calls_map,
-                        visited_allocs: &mut visited_allocs,
-                        ty_visitor: &mut ty_visitor,
-                        spans: &mut span_map,
+                match inst.body() {
+                    Some(body) => (body, vec![]),
+                    None => {
+                        eprintln!(
+                            "Failed to retrive body for Instance of MonoItem::Static {}",
+                            inst.name()
+                        );
+                        continue;
                     }
-                    .visit_body(&body)
-                } else {
-                    eprintln!(
-                        "Failed to retrive body for Instance of MonoItem::Static {}",
-                        inst.name()
-                    )
                 }
             }
-            MonoItem::GlobalAsm(_) => {}
+            MonoItem::GlobalAsm(_) => continue,
+        };
+        InternedValueCollector {
+            tcx,
+            locals: &locals,
+            link_map: &mut calls_map,
+            visited_allocs: &mut visited_allocs,
+            ty_visitor: &mut ty_visitor,
+            spans: &mut span_map,
         }
+        .visit_body(&body);
     }
     InternedValues {
         link_map: calls_map,
