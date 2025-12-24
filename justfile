@@ -30,7 +30,7 @@ lint:
 # Clean build artifacts
 clean:
     cargo clean
-    rm -rf output-html output-dot output-d2 output-md
+    rm -rf output-html output-dot output-d2 output-md output-typst
 
 # Test programs directory
 test_dir := "tests/integration/programs"
@@ -108,8 +108,42 @@ md-file file:
     cargo run -- --md -Zno-codegen --out-dir output-md "{{file}}"
     echo "Generated: output-md/${name}.smir.md"
 
+# Generate Typst output for all test programs
+typst:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p output-typst
+    for rust in {{test_dir}}/*.rs; do
+        name=$(basename "${rust%.rs}")
+        echo "Generating Typst for $name..."
+        cargo run -- --typst -Zno-codegen --out-dir output-typst "$rust" 2>/dev/null || true
+        if [ -f "output-typst/${name}.smir.typ" ]; then
+            echo "  -> output-typst/${name}.smir.typ"
+        fi
+    done
+    echo "Done. Typst files in output-typst/"
+
+# Generate Typst for a single file
+typst-file file:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p output-typst
+    name=$(basename "{{file}}" .rs)
+    cargo run -- --typst -Zno-codegen --out-dir output-typst "{{file}}"
+    echo "Generated: output-typst/${name}.smir.typ"
+
+# Compile Typst to PDF (requires typst CLI)
+typst-pdf file:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p output-typst
+    name=$(basename "{{file}}" .rs)
+    cargo run -- --typst -Zno-codegen --out-dir output-typst "{{file}}"
+    typst compile "output-typst/${name}.smir.typ" "output-typst/${name}.smir.pdf"
+    echo "Generated: output-typst/${name}.smir.pdf"
+
 # Generate all output formats
-all: html dot d2 md
+all: html dot d2 md typst
 
 # Generate HTML with embedded SVG call graph (collapsible)
 html-graph:
