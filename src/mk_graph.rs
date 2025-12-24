@@ -934,7 +934,7 @@ fn render_rvalue_ctx(v: &Rvalue, ctx: &GraphContext) -> String {
         }
         Repeat(op, _ty_const) => format!("Repeat {}", ctx.render_operand(op)),
         ShallowInitBox(op, _ty) => format!("ShallowInitBox({})", ctx.render_operand(op)),
-        ThreadLocalRef(_item) => "ThreadLocalRef".to_string(),
+        ThreadLocalRef(item) => format!("ThreadLocalRef({})", item.name()),
         NullaryOp(nullop, ty) => format!("{} :: {}", nullop.label(), ty),
         UnaryOp(unop, op) => format!("{:?}({})", unop, ctx.render_operand(op)),
         Use(op) => format!("Use({})", ctx.render_operand(op)),
@@ -1148,7 +1148,7 @@ impl GraphLabelString for Rvalue {
             }
             Repeat(op, _ty_const) => format!("Repeat {}", op.label()),
             ShallowInitBox(op, _ty) => format!("ShallowInitBox({})", op.label()),
-            ThreadLocalRef(_item) => "ThreadLocalRef".to_string(),
+            ThreadLocalRef(item) => format!("ThreadLocalRef({})", item.name()),
             NullaryOp(nullop, ty) => format!("{} :: {}", nullop.label(), ty),
             UnaryOp(unop, op) => format!("{:?}({})", unop, op.label()),
             Use(op) => format!("Use({})", op.label()),
