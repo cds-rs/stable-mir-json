@@ -61,12 +61,29 @@ pub struct TypeIndex {
     by_id: HashMap<u64, String>,
 }
 
+/// Index for looking up span/source location information
+pub struct SpanIndex {
+    by_id: HashMap<usize, SpanInfo>,
+}
+
+/// Source location information for a span
+#[derive(Clone)]
+pub struct SpanInfo {
+    pub file: String,
+    pub line_start: usize,
+    pub col_start: usize,
+    pub line_end: usize,
+    pub col_end: usize,
+}
+
 /// Context for rendering graph labels with access to indices
 pub struct GraphContext {
     pub allocs: AllocIndex,
     pub types: TypeIndex,
     pub functions: HashMap<Ty, String>,
     pub uneval_consts: HashMap<ConstDef, String>,
+    pub spans: SpanIndex,
+    pub show_spans: bool,
 }
 
 // =============================================================================
@@ -242,6 +259,56 @@ impl TypeIndex {
     }
 }
 
+impl SpanIndex {
+    pub fn new() -> Self {
+        Self {
+            by_id: HashMap::new(),
+        }
+    }
+
+    pub fn from_spans(spans: &[(usize, (String, usize, usize, usize, usize))]) -> Self {
+        let by_id = spans
+            .iter()
+            .map(|(id, (file, lo_line, lo_col, hi_line, hi_col))| {
+                (
+                    *id,
+                    SpanInfo {
+                        file: file.clone(),
+                        line_start: *lo_line,
+                        col_start: *lo_col,
+                        line_end: *hi_line,
+                        col_end: *hi_col,
+                    },
+                )
+            })
+            .collect();
+        Self { by_id }
+    }
+
+    pub fn get(&self, span_id: usize) -> Option<&SpanInfo> {
+        self.by_id.get(&span_id)
+    }
+}
+
+impl Default for SpanIndex {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl SpanInfo {
+    /// Format as "file:line" for compact display
+    pub fn short(&self) -> String {
+        // Extract just the filename from the path
+        let file = self
+            .file
+            .rsplit('/')
+            .next()
+            .unwrap_or(&self.file);
+        format!("{}:{}", file, self.line_start)
+    }
+}
+
 impl GraphContext {
     pub fn from_smir(smir: &SmirJson) -> Self {
         let types = TypeIndex::from_types(&smir.types);
@@ -253,12 +320,16 @@ impl GraphContext {
             .collect();
         let uneval_consts: HashMap<ConstDef, String> =
             smir.uneval_consts.iter().cloned().collect();
+        let spans = SpanIndex::from_spans(&smir.spans);
+        let show_spans = std::env::var("SHOW_SPANS").is_ok();
 
         Self {
             allocs,
             types,
             functions,
             uneval_consts,
+            spans,
+            show_spans,
         }
     }
 
@@ -319,6 +390,17 @@ impl GraphContext {
             Operand::Copy(place) => format!("cp({})", place.label()),
             Operand::Move(place) => format!("mv({})", place.label()),
         }
+    }
+
+    /// Format a span suffix if SHOW_SPANS is enabled
+    pub fn span_suffix(&self, span: &stable_mir::ty::Span) -> String {
+        if !self.show_spans {
+            return String::new();
+        }
+        self.spans
+            .get(span.to_index())
+            .map(|info| format!(" @ {}", info.short()))
+            .unwrap_or_default()
     }
 
     /// Generate the allocs legend as lines for display
@@ -872,7 +954,8 @@ fn block_name(function_name: &str, id: usize) -> String {
 /// Render statement with context for alloc/type information
 fn render_stmt_ctx(s: &Statement, ctx: &GraphContext) -> String {
     use StatementKind::*;
-    match &s.kind {
+    let span_suffix = ctx.span_suffix(&s.span);
+    let base = match &s.kind {
         Assign(p, v) => format!("{} <- {}", p.label(), render_rvalue_ctx(v, ctx)),
         FakeRead(_cause, p) => format!("Fake-Read {}", p.label()),
         SetDiscriminant {
@@ -897,7 +980,8 @@ fn render_stmt_ctx(s: &Statement, ctx: &GraphContext) -> String {
         Intrinsic(intr) => format!("Intr: {}", render_intrinsic_ctx(intr, ctx)),
         ConstEvalCounter {} => "ConstEvalCounter".to_string(),
         Nop {} => "Nop".to_string(),
-    }
+    };
+    format!("{}{}", base, span_suffix)
 }
 
 /// Render rvalue with context
@@ -966,7 +1050,8 @@ fn render_intrinsic_ctx(intr: &NonDivergingIntrinsic, ctx: &GraphContext) -> Str
 /// Render terminator with context for alloc/type information
 fn render_terminator_ctx(term: &Terminator, ctx: &GraphContext) -> String {
     use TerminatorKind::*;
-    match &term.kind {
+    let span_suffix = ctx.span_suffix(&term.span);
+    let base = match &term.kind {
         Goto { .. } => "Goto".to_string(),
         SwitchInt { discr, .. } => format!("SwitchInt {}", ctx.render_operand(discr)),
         Resume {} => "Resume".to_string(),
@@ -995,7 +1080,8 @@ fn render_terminator_ctx(term: &Terminator, ctx: &GraphContext) -> String {
             format!("Assert {} == {}", ctx.render_operand(cond), expected)
         }
         InlineAsm { .. } => "InlineAsm".to_string(),
-    }
+    };
+    format!("{}{}", base, span_suffix)
 }
 
 /// Get target block indices from a terminator
