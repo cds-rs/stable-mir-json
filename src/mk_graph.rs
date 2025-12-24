@@ -76,11 +76,24 @@ pub struct SpanInfo {
     pub col_end: usize,
 }
 
+/// Key for looking up function names, using full LinkMapKey info.
+/// This avoids collisions when multiple generic instantiations share the same Ty.
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct FunctionKey {
+    pub ty: Ty,
+    pub instance_desc: Option<String>,
+}
+
 /// Context for rendering graph labels with access to indices
 pub struct GraphContext {
     pub allocs: AllocIndex,
     pub types: TypeIndex,
-    pub functions: HashMap<Ty, String>,
+    /// Primary function lookup using full key (Ty + instance descriptor).
+    /// Prevents collisions for generic functions with different instantiations.
+    pub functions: HashMap<FunctionKey, String>,
+    /// Fallback lookup by Ty only, used when instance info isn't available
+    /// at the call site (e.g., when resolving from just a type).
+    pub functions_by_ty: HashMap<Ty, String>,
     pub uneval_consts: HashMap<ConstDef, String>,
     pub spans: SpanIndex,
     pub show_spans: bool,
@@ -313,11 +326,20 @@ impl GraphContext {
     pub fn from_smir(smir: &SmirJson) -> Self {
         let types = TypeIndex::from_types(&smir.types);
         let allocs = AllocIndex::from_alloc_infos(&smir.allocs, &types);
-        let functions: HashMap<Ty, String> = smir
-            .functions
-            .iter()
-            .map(|(k, v)| (k.0, function_string(v.clone())))
-            .collect();
+
+        // Build both function maps: full key and Ty-only fallback
+        let mut functions = HashMap::new();
+        let mut functions_by_ty = HashMap::new();
+        for (k, v) in &smir.functions {
+            let name = function_string(v.clone());
+            let key = FunctionKey {
+                ty: k.0,
+                instance_desc: k.instance_desc(),
+            };
+            functions.insert(key, name.clone());
+            functions_by_ty.insert(k.0, name);
+        }
+
         let uneval_consts: HashMap<ConstDef, String> =
             smir.uneval_consts.iter().cloned().collect();
         let spans = SpanIndex::from_spans(&smir.spans);
@@ -327,6 +349,7 @@ impl GraphContext {
             allocs,
             types,
             functions,
+            functions_by_ty,
             uneval_consts,
             spans,
             show_spans,
@@ -364,7 +387,7 @@ impl GraphContext {
             ConstantKind::ZeroSized => {
                 // Function pointers, unit type, etc.
                 if ty.kind().is_fn() {
-                    if let Some(name) = self.functions.get(&ty) {
+                    if let Some(name) = self.functions_by_ty.get(&ty) {
                         format!("const fn {}", short_fn_name(name))
                     } else {
                         format!("const {}", ty_name)
@@ -420,7 +443,7 @@ impl GraphContext {
             Operand::Constant(ConstOperand { const_, .. }) => {
                 let ty = const_.ty();
                 if ty.kind().is_fn() {
-                    self.functions.get(&ty).cloned()
+                    self.functions_by_ty.get(&ty).cloned()
                 } else {
                     None
                 }
@@ -701,7 +724,7 @@ impl SmirJson<'_> {
                                                     const_, ..
                                                 }) => {
                                                     if let Some(callee) =
-                                                        ctx.functions.get(&const_.ty())
+                                                        ctx.functions_by_ty.get(&const_.ty())
                                                     {
                                                         // callee node/body will be added when its body is added, missing ones added before
                                                         graph.edge(

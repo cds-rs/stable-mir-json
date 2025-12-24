@@ -441,6 +441,13 @@ pub struct LinkMapKey<'tcx>(
     Option<middle::ty::InstanceKind<'tcx>>,
 );
 
+impl<'tcx> LinkMapKey<'tcx> {
+    /// Get the instance kind as a debug string, if present
+    pub fn instance_desc(&self) -> Option<String> {
+        self.1.as_ref().map(|inst| format!("{:?}", inst))
+    }
+}
+
 impl Serialize for LinkMapKey<'_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
