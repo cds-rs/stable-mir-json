@@ -159,8 +159,14 @@ impl AllocEntry {
                     format!("static {}", name),
                 )
             }
-            GlobalAlloc::VTable(vty, _trait_ref) => {
-                let desc = format!("{}", vty);
+            GlobalAlloc::VTable(vty, trait_ref) => {
+                let desc = if let Some(tr) = trait_ref {
+                    // Binder<ExistentialTraitRef>.value.def_id identifies the trait
+                    let trait_name = tr.value.def_id.name();
+                    format!("{} as {}", vty, trait_name)
+                } else {
+                    format!("{}", vty)
+                };
                 (
                     AllocKind::VTable {
                         ty_desc: desc.clone(),
