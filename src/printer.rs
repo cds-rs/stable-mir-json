@@ -471,6 +471,23 @@ const ITEM: u8 = 1 << 0;
 const TERM: u8 = 1 << 1;
 const FPTR: u8 = 1 << 2;
 
+impl ItemSource {
+    /// Convert to a human-readable string showing source flags
+    pub fn as_str(&self) -> &'static str {
+        match self.0 {
+            0 => "None",
+            1 => "Item",
+            2 => "Term",
+            3 => "Item+Term",
+            4 => "Fptr",
+            5 => "Item+Fptr",
+            6 => "Term+Fptr",
+            7 => "Item+Term+Fptr",
+            _ => "Unknown",
+        }
+    }
+}
+
 impl Serialize for ItemSource {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -1353,6 +1370,16 @@ pub struct SmirJsonDebugInfo<'t> {
     fn_sources: Vec<(LinkMapKey<'t>, ItemSource)>,
     types: TyMap,
     foreign_modules: Vec<(String, Vec<ForeignModule>)>,
+}
+
+impl<'t> SmirJsonDebugInfo<'t> {
+    /// Get function sources as (key, source_string) pairs
+    pub fn fn_sources(&self) -> Vec<(&LinkMapKey<'t>, String)> {
+        self.fn_sources
+            .iter()
+            .map(|(k, s)| (k, s.as_str().to_string()))
+            .collect()
+    }
 }
 
 #[derive(Serialize)]

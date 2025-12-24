@@ -99,6 +99,10 @@ pub struct GraphContext {
     pub uneval_consts: HashMap<ConstDef, String>,
     pub spans: SpanIndex,
     pub show_spans: bool,
+    /// When DEBUG is set, extra info is available
+    pub show_debug: bool,
+    /// Debug: function source info (where functions are referenced from)
+    pub fn_sources: HashMap<FunctionKey, String>,
 }
 
 // =============================================================================
@@ -388,6 +392,25 @@ impl GraphContext {
         let spans = SpanIndex::from_spans(&smir.spans);
         let show_spans = std::env::var("SHOW_SPANS").is_ok();
 
+        // Extract debug info if available
+        let show_debug = smir.debug.is_some();
+        let fn_sources = smir
+            .debug
+            .as_ref()
+            .map(|d| {
+                d.fn_sources()
+                    .iter()
+                    .map(|(k, source)| {
+                        let key = FunctionKey {
+                            ty: k.0,
+                            instance_desc: k.instance_desc(),
+                        };
+                        (key, source.clone())
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+
         Self {
             allocs,
             types,
@@ -396,6 +419,8 @@ impl GraphContext {
             uneval_consts,
             spans,
             show_spans,
+            show_debug,
+            fn_sources,
         }
     }
 
@@ -469,6 +494,22 @@ impl GraphContext {
         self.spans
             .get(span.to_index())
             .map(|info| format!(" @ {}", info.short()))
+            .unwrap_or_default()
+    }
+
+    /// Get debug source info for a function if DEBUG is enabled
+    pub fn fn_source_suffix(&self, ty: Ty) -> String {
+        if !self.show_debug {
+            return String::new();
+        }
+        // Look up by Ty with None instance_desc as fallback
+        let key = FunctionKey {
+            ty,
+            instance_desc: None,
+        };
+        self.fn_sources
+            .get(&key)
+            .map(|s| format!(" [{}]", s))
             .unwrap_or_default()
     }
 
@@ -1143,7 +1184,20 @@ fn render_terminator_ctx(term: &Terminator, ctx: &GraphContext) -> String {
                 .map(|op| ctx.render_operand(op))
                 .collect::<Vec<_>>()
                 .join(", ");
-            format!("{} = {}({})", destination.label(), fn_name, arg_str)
+            // Add debug source info if available (shows where fn was referenced from)
+            let debug_suffix = match func {
+                Operand::Constant(ConstOperand { const_, .. }) => {
+                    ctx.fn_source_suffix(const_.ty())
+                }
+                _ => String::new(),
+            };
+            format!(
+                "{} = {}({}){}",
+                destination.label(),
+                fn_name,
+                arg_str,
+                debug_suffix
+            )
         }
         Assert { cond, expected, .. } => {
             format!("Assert {} == {}", ctx.render_operand(cond), expected)
