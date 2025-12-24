@@ -1,0 +1,204 @@
+//! Utility functions and traits for graph generation.
+
+use std::hash::{DefaultHasher, Hash, Hasher};
+
+extern crate stable_mir;
+use stable_mir::mir::{
+    AggregateKind, Mutability, NullOp, Place, ProjectionElem, Terminator, TerminatorKind,
+    UnwindAction,
+};
+use stable_mir::ty::IndexedVal;
+
+use crate::printer::FnSymType;
+
+// =============================================================================
+// Constants
+// =============================================================================
+
+/// Maximum characters to show when previewing string content
+pub const MAX_STRING_PREVIEW_LEN: usize = 20;
+
+/// Maximum bytes that can be displayed as a single numeric value (fits in u64)
+pub const MAX_NUMERIC_BYTES: usize = 8;
+
+// =============================================================================
+// Graph Label Trait
+// =============================================================================
+
+/// Rendering things as part of graph node labels
+pub trait GraphLabelString {
+    fn label(&self) -> String;
+}
+
+impl GraphLabelString for Place {
+    fn label(&self) -> String {
+        project(self.local.to_string(), &self.projection)
+    }
+}
+
+impl GraphLabelString for AggregateKind {
+    fn label(&self) -> String {
+        use AggregateKind::*;
+        match &self {
+            Array(_ty) => "Array".to_string(),
+            Tuple {} => "Tuple".to_string(),
+            Adt(_, idx, _, _, _) => format!("Adt{{{}}}", idx.to_index()),
+            Closure(_, _) => "Closure".to_string(),
+            Coroutine(_, _, _) => "Coroutine".to_string(),
+            RawPtr(ty, Mutability::Mut) => format!("*mut ({})", ty),
+            RawPtr(ty, Mutability::Not) => format!("*({})", ty),
+        }
+    }
+}
+
+impl GraphLabelString for NullOp {
+    fn label(&self) -> String {
+        match &self {
+            NullOp::OffsetOf(_vec) => "OffsetOf(..)".to_string(),
+            other => format!("{:?}", other),
+        }
+    }
+}
+
+fn project(local: String, ps: &[ProjectionElem]) -> String {
+    ps.iter().fold(local, decorate)
+}
+
+fn decorate(thing: String, p: &ProjectionElem) -> String {
+    match p {
+        ProjectionElem::Deref => format!("(*{})", thing),
+        ProjectionElem::Field(i, _) => format!("{thing}.{i}"),
+        ProjectionElem::Index(local) => format!("{thing}[_{local}]"),
+        ProjectionElem::ConstantIndex {
+            offset,
+            min_length: _,
+            from_end,
+        } => format!("{thing}[{}{}]", if *from_end { "-" } else { "" }, offset),
+        ProjectionElem::Subslice { from, to, from_end } => {
+            format!(
+                "{thing}[{}..{}{}]",
+                from,
+                if *from_end { "-" } else { "" },
+                to
+            )
+        }
+        ProjectionElem::Downcast(i) => format!("({thing} as variant {})", i.to_index()),
+        ProjectionElem::OpaqueCast(ty) => format!("{thing} as type {ty}"),
+        ProjectionElem::Subtype(i) => format!("{thing} :> {i}"),
+    }
+}
+
+// =============================================================================
+// String Helpers
+// =============================================================================
+
+/// Shorten a function name for display (takes last segment after ::)
+pub fn short_fn_name(name: &str) -> String {
+    name.rsplit("::").next().unwrap_or(name).to_string()
+}
+
+/// Generate a consistent short hash-based ID for a function name
+pub fn short_name(function_name: &str) -> String {
+    let mut h = DefaultHasher::new();
+    function_name.hash(&mut h);
+    format!("X{:x}", h.finish())
+}
+
+/// Generate a consistent block node name within a function cluster
+pub fn block_name(function_name: &str, id: usize) -> String {
+    format!("{}_{}", short_name(function_name), id)
+}
+
+/// Convert a function symbol type to a display string
+pub fn function_string(f: FnSymType) -> String {
+    match f {
+        FnSymType::NormalSym(name) => name,
+        FnSymType::NoOpSym(name) => format!("NoOp: {name}"),
+        FnSymType::IntrinsicSym(name) => format!("Intr: {name}"),
+    }
+}
+
+/// Format a name with line breaks for display (wraps at ~25 chars)
+pub fn name_lines(name: &str) -> String {
+    name.split_inclusive(" ")
+        .flat_map(|s| s.as_bytes().chunks(25))
+        .map(|bs| core::str::from_utf8(bs).unwrap().to_string())
+        .collect::<Vec<String>>()
+        .join("\\n")
+}
+
+/// Check if a name is unqualified (no :: separator)
+pub fn is_unqualified(name: &str) -> bool {
+    !name.contains("::")
+}
+
+/// Escape special characters for D2 string labels
+pub fn escape_d2(s: &str) -> String {
+    s.replace('\\', "\\\\")
+        .replace('"', "\\\"")
+        .replace('$', "\\$")
+}
+
+/// Convert byte slice to u64, little-endian (least significant byte first)
+pub fn bytes_to_u64_le(bytes: &[u8]) -> u64 {
+    bytes
+        .iter()
+        .enumerate()
+        .fold(0u64, |acc, (i, &b)| acc | ((b as u64) << (i * 8)))
+}
+
+// =============================================================================
+// Terminator Helpers
+// =============================================================================
+
+/// Get target block indices from a terminator
+pub fn terminator_targets(term: &Terminator) -> Vec<usize> {
+    use TerminatorKind::*;
+    match &term.kind {
+        Goto { target } => vec![*target],
+        SwitchInt { targets, .. } => {
+            let mut result: Vec<usize> = targets.branches().map(|(_, t)| t).collect();
+            result.push(targets.otherwise());
+            result
+        }
+        Resume {} | Abort {} | Return {} | Unreachable {} => vec![],
+        Drop { target, unwind, .. } => {
+            let mut result = vec![*target];
+            if let UnwindAction::Cleanup(t) = unwind {
+                result.push(*t);
+            }
+            result
+        }
+        Call { target, unwind, .. } => {
+            let mut result = vec![];
+            if let Some(t) = target {
+                result.push(*t);
+            }
+            if let UnwindAction::Cleanup(t) = unwind {
+                result.push(*t);
+            }
+            result
+        }
+        Assert { target, unwind, .. } => {
+            let mut result = vec![*target];
+            if let UnwindAction::Cleanup(t) = unwind {
+                result.push(*t);
+            }
+            result
+        }
+        InlineAsm {
+            destination,
+            unwind,
+            ..
+        } => {
+            let mut result = vec![];
+            if let Some(t) = destination {
+                result.push(*t);
+            }
+            if let UnwindAction::Cleanup(t) = unwind {
+                result.push(*t);
+            }
+            result
+        }
+    }
+}
