@@ -4,7 +4,8 @@
 //! to string representations, used by both the HTML and explorer outputs.
 
 extern crate stable_mir;
-use stable_mir::mir::{BinOp, CastKind, NullOp, Operand, Place, Rvalue, UnOp};
+use stable_mir::mir::{AggregateKind, BinOp, CastKind, NullOp, Operand, Place, Rvalue, UnOp};
+use stable_mir::ty::IndexedVal;
 use stable_mir::CrateDef;
 
 /// Render a place (lvalue) to string
@@ -108,11 +109,52 @@ pub fn render_rvalue(rv: &Rvalue) -> String {
         Rvalue::Discriminant(place) => format!("discr({})", render_place(place)),
         Rvalue::Aggregate(kind, ops) => {
             let ops_str: Vec<String> = ops.iter().map(render_operand).collect();
-            format!("{:?}({})", kind, ops_str.join(", "))
+            let kind_str = render_aggregate_kind(kind);
+            if ops_str.is_empty() {
+                format!("{}()", kind_str)
+            } else {
+                format!("{}({})", kind_str, ops_str.join(", "))
+            }
         }
         Rvalue::ShallowInitBox(op, _) => format!("box {}", render_operand(op)),
         Rvalue::CopyForDeref(place) => format!("copy_deref({})", render_place(place)),
         Rvalue::ThreadLocalRef(_) => "thread_local".to_string(),
+    }
+}
+
+/// Render an aggregate kind to a concise string
+fn render_aggregate_kind(kind: &AggregateKind) -> String {
+    match kind {
+        AggregateKind::Array(_) => "Array".to_string(),
+        AggregateKind::Tuple => "Tuple".to_string(),
+        AggregateKind::Adt(def, variant, _, _, _) => {
+            // Extract the short name from the ADT
+            let full_name = def.name();
+            let short_name = short_fn_name(&full_name);
+
+            // Try to get variant name for enums
+            let variants = def.variants();
+            let variant_idx = variant.to_index();
+            if variants.len() > 1 {
+                // It's an enum with multiple variants - show variant name
+                if let Some(var_def) = variants.get(variant_idx) {
+                    let var_name = short_fn_name(&var_def.name());
+                    format!("{}::{}", short_name, var_name)
+                } else {
+                    format!("{}::#{}", short_name, variant_idx)
+                }
+            } else {
+                // Struct or single-variant enum - just show the type name
+                short_name
+            }
+        }
+        AggregateKind::Closure(def, _) => {
+            format!("Closure({})", short_fn_name(&def.name()))
+        }
+        AggregateKind::Coroutine(def, _, _) => {
+            format!("Coroutine({})", short_fn_name(&def.name()))
+        }
+        AggregateKind::RawPtr(_, _) => "RawPtr".to_string(),
     }
 }
 

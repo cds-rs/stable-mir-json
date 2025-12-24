@@ -1,7 +1,7 @@
 //! Graph generation from MIR data.
 //!
 //! This module provides functionality to convert stable MIR JSON representation
-//! into graph formats (DOT/Graphviz and D2) for visualization.
+//! into graph formats (DOT/Graphviz, D2, Markdown) for visualization.
 //!
 //! # Module Structure
 //!
@@ -10,6 +10,7 @@
 //! - `util`: Utility functions and traits for graph generation
 //! - `output/dot`: DOT (Graphviz) format output
 //! - `output/d2`: D2 diagram format output
+//! - `output/markdown`: Markdown annotated output
 
 use std::fs::File;
 use std::io::{self, Write};
@@ -72,3 +73,6 @@ pub fn emit_dotfile(tcx: TyCtxt<'_>) {
 pub fn emit_d2file(tcx: TyCtxt<'_>) {
     emit_graph_file(tcx, "smir.d2", |s| s.to_d2_file());
 }
+
+// Re-export markdown entry point
+pub use output::markdown::emit_mdfile;

@@ -30,7 +30,7 @@ lint:
 # Clean build artifacts
 clean:
     cargo clean
-    rm -rf output-html output-dot output-d2
+    rm -rf output-html output-dot output-d2 output-md
 
 # Test programs directory
 test_dir := "tests/integration/programs"
@@ -84,8 +84,32 @@ d2:
     done
     echo "Done. D2 files in output-d2/"
 
+# Generate Markdown output for all test programs
+md:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p output-md
+    for rust in {{test_dir}}/*.rs; do
+        name=$(basename "${rust%.rs}")
+        echo "Generating Markdown for $name..."
+        cargo run -- --md -Zno-codegen --out-dir output-md "$rust" 2>/dev/null || true
+        if [ -f "output-md/${name}.smir.md" ]; then
+            echo "  -> output-md/${name}.smir.md"
+        fi
+    done
+    echo "Done. Markdown files in output-md/"
+
+# Generate Markdown for a single file
+md-file file:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p output-md
+    name=$(basename "{{file}}" .rs)
+    cargo run -- --md -Zno-codegen --out-dir output-md "{{file}}"
+    echo "Generated: output-md/${name}.smir.md"
+
 # Generate all output formats
-all: html dot d2
+all: html dot d2 md
 
 # Generate HTML with embedded SVG call graph (collapsible)
 html-graph:

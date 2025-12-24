@@ -6,7 +6,7 @@ use driver::stable_mir_driver;
 use printer::emit_smir;
 use stable_mir_json::explore::{emit_explore, emit_explore_json};
 use stable_mir_json::html::emit_html;
-use stable_mir_json::mk_graph::{emit_d2file, emit_dotfile};
+use stable_mir_json::mk_graph::{emit_d2file, emit_dotfile, emit_mdfile};
 use stable_mir_json::wasm_embed::emit_wasm_explore;
 
 fn main() {
@@ -25,6 +25,10 @@ fn main() {
         Some(arg) if arg == "--d2" => {
             args.remove(1);
             stable_mir_driver(&args, emit_d2file)
+        }
+        Some(arg) if arg == "--md" => {
+            args.remove(1);
+            stable_mir_driver(&args, emit_mdfile)
         }
         Some(arg) if arg == "--html" => {
             args.remove(1);

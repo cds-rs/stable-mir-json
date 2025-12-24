@@ -2,3 +2,4 @@
 
 pub mod d2;
 pub mod dot;
+pub mod markdown;

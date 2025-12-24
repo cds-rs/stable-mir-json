@@ -5,3 +5,4 @@ tests/ui/passing/*
 output-html/
 output-dot/
 output-d2/
+output-md/
