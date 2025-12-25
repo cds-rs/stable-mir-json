@@ -365,11 +365,9 @@ fn sum_to_n(n:usize) -> usize {
     (0pt, 0pt), (4pt, 6pt), (8pt, 0pt),
     fill: rgb("#666666"),
   ))
-  place(dx: 70pt, dy: 234pt, path(
-    (0pt, 0pt), (-15pt, -87pt), (-15pt, -174pt),
-    (25pt, -174pt),
-    stroke: (paint: rgb("#666666"), thickness: 1pt, dash: "dashed"),
-  ))
+  place(dx: 70pt, dy: 234pt, line(start: (0pt, 0pt), end: (-10pt, 5pt), stroke: (paint: rgb("#888888"), thickness: 1pt, dash: "dashed")))
+  place(dx: 50pt, dy: 239pt, line(start: (0pt, 0pt), end: (0pt, -184pt), stroke: (paint: rgb("#888888"), thickness: 1pt, dash: "dashed")))
+  place(dx: 50pt, dy: 55pt, line(start: (0pt, 0pt), end: (20pt, 5pt), stroke: (paint: rgb("#888888"), thickness: 1pt, dash: "dashed")))
   place(dx: 70pt, dy: 10pt, rect(
     width: 60pt, height: 24pt,
     fill: rgb("#e8f5e9"),
