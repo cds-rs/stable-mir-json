@@ -154,9 +154,8 @@ fn generate_function_typst(ctx: &FunctionContext) -> String {
 
     // === Control-Flow Diagram ===
     typ.push_str("== Control-Flow Overview\n\n");
-    typ.push_str("```\n");
-    typ.push_str(&ctx.ascii_cfg());
-    typ.push_str("```\n\n");
+    typ.push_str(&ctx.typst_cfg());
+    typ.push_str("\n");
 
     // === Basic Blocks ===
     typ.push_str("== Basic Blocks\n\n");

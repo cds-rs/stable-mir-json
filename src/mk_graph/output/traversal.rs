@@ -572,6 +572,240 @@ pub fn extract_function_source(
 }
 
 // =============================================================================
+// Typst CFG Diagram Generation
+// =============================================================================
+
+/// Layout information for a block in the CFG diagram
+#[derive(Clone, Copy)]
+struct BlockLayout {
+    x: f32,
+    y: f32,
+}
+
+/// Generate a native Typst CFG diagram using boxes and lines
+pub fn generate_typst_cfg(body: &Body, roles: &HashMap<usize, BlockRole>) -> String {
+    let n = body.blocks.len();
+    if n == 0 {
+        return String::new();
+    }
+
+    // Layout parameters
+    let box_width = 60.0;
+    let box_height = 24.0;
+    let h_spacing = 80.0;
+    let v_spacing = 50.0;
+
+    // Build edge list
+    let edges: Vec<(usize, usize)> = body
+        .blocks
+        .iter()
+        .enumerate()
+        .flat_map(|(idx, block)| {
+            get_terminator_targets(&block.terminator)
+                .into_iter()
+                .map(move |target| (idx, target))
+        })
+        .collect();
+
+    // Simple layout: assign levels (y) and columns (x)
+    let layouts = compute_cfg_layout(body, roles, box_width, h_spacing, v_spacing);
+
+    // Calculate canvas size
+    let max_x = layouts.iter().map(|l| l.x).fold(0.0f32, f32::max) + box_width + 20.0;
+    let max_y = layouts.iter().map(|l| l.y).fold(0.0f32, f32::max) + box_height + 20.0;
+
+    let mut typ = String::new();
+
+    // Container box
+    typ.push_str(&format!(
+        "#box(width: {}pt, height: {}pt, {{\n",
+        max_x, max_y
+    ));
+
+    // Draw edges first (so they appear behind boxes)
+    for (from, to) in &edges {
+        let from_layout = &layouts[*from];
+        let to_layout = &layouts[*to];
+
+        // Calculate connection points
+        let from_x = from_layout.x + box_width / 2.0;
+        let from_y = from_layout.y + box_height;
+        let to_x = to_layout.x + box_width / 2.0;
+        let to_y = to_layout.y;
+
+        // Check if this is a back-edge (loop)
+        let is_back_edge = to <= from;
+
+        if is_back_edge {
+            // Draw curved back-edge on the left side
+            let curve_x = from_layout.x.min(to_layout.x) - 15.0;
+            typ.push_str(&format!(
+                "  place(dx: {}pt, dy: {}pt, path(\n",
+                from_layout.x, from_y
+            ));
+            typ.push_str(&format!(
+                "    (0pt, 0pt), ({}pt, {}pt), ({}pt, {}pt),\n",
+                curve_x - from_layout.x,
+                (to_y - from_y) / 2.0,
+                curve_x - from_layout.x,
+                to_y - from_y
+            ));
+            typ.push_str(&format!(
+                "    ({}pt, {}pt),\n",
+                to_x - from_layout.x - 5.0,
+                to_y - from_y
+            ));
+            typ.push_str("    stroke: (paint: rgb(\"#666666\"), thickness: 1pt, dash: \"dashed\"),\n");
+            typ.push_str("  ))\n");
+        } else {
+            // Draw straight or angled edge
+            typ.push_str(&format!(
+                "  place(dx: {}pt, dy: {}pt, line(\n",
+                from_x, from_y
+            ));
+            typ.push_str(&format!(
+                "    start: (0pt, 0pt), end: ({}pt, {}pt),\n",
+                to_x - from_x,
+                to_y - from_y
+            ));
+            typ.push_str("    stroke: (paint: rgb(\"#666666\"), thickness: 1pt),\n");
+            typ.push_str("  ))\n");
+
+            // Draw arrowhead
+            let arrow_size = 4.0;
+            typ.push_str(&format!(
+                "  place(dx: {}pt, dy: {}pt, polygon(\n",
+                to_x - arrow_size,
+                to_y - arrow_size * 1.5
+            ));
+            typ.push_str(&format!(
+                "    (0pt, 0pt), ({}pt, {}pt), ({}pt, 0pt),\n",
+                arrow_size,
+                arrow_size * 1.5,
+                arrow_size * 2.0
+            ));
+            typ.push_str("    fill: rgb(\"#666666\"),\n");
+            typ.push_str("  ))\n");
+        }
+    }
+
+    // Draw boxes for each block
+    for (idx, layout) in layouts.iter().enumerate() {
+        let role = roles.get(&idx).copied().unwrap_or(BlockRole::Normal);
+        let (fill_color, stroke_color) = block_colors(role);
+
+        typ.push_str(&format!(
+            "  place(dx: {}pt, dy: {}pt, rect(\n",
+            layout.x, layout.y
+        ));
+        typ.push_str(&format!(
+            "    width: {}pt, height: {}pt,\n",
+            box_width, box_height
+        ));
+        typ.push_str(&format!("    fill: rgb(\"{}\"),\n", fill_color));
+        typ.push_str(&format!(
+            "    stroke: (paint: rgb(\"{}\"), thickness: 1pt),\n",
+            stroke_color
+        ));
+        typ.push_str("    radius: 3pt,\n");
+        typ.push_str(&format!(
+            "    align(center + horizon, text(size: 9pt)[bb{}]),\n",
+            idx
+        ));
+        typ.push_str("  ))\n");
+    }
+
+    typ.push_str("})\n");
+
+    typ
+}
+
+/// Compute layout positions for blocks
+fn compute_cfg_layout(
+    body: &Body,
+    roles: &HashMap<usize, BlockRole>,
+    box_width: f32,
+    h_spacing: f32,
+    v_spacing: f32,
+) -> Vec<BlockLayout> {
+    let n = body.blocks.len();
+    if n == 0 {
+        return vec![];
+    }
+
+    // Compute levels using BFS from entry
+    let mut levels = vec![usize::MAX; n];
+    let mut queue = std::collections::VecDeque::new();
+    levels[0] = 0;
+    queue.push_back(0);
+
+    while let Some(idx) = queue.pop_front() {
+        let targets = get_terminator_targets(&body.blocks[idx].terminator);
+        for target in targets {
+            if target < n && levels[target] == usize::MAX {
+                levels[target] = levels[idx] + 1;
+                queue.push_back(target);
+            }
+        }
+    }
+
+    // Handle unreachable blocks
+    for i in 0..n {
+        if levels[i] == usize::MAX {
+            levels[i] = n;
+        }
+    }
+
+    // Group blocks by level
+    let max_level = levels.iter().copied().max().unwrap_or(0);
+    let mut level_blocks: Vec<Vec<usize>> = vec![vec![]; max_level + 1];
+    for (idx, &level) in levels.iter().enumerate() {
+        if level <= max_level {
+            level_blocks[level].push(idx);
+        }
+    }
+
+    // Assign x positions within each level
+    let mut layouts = vec![BlockLayout { x: 0.0, y: 0.0 }; n];
+
+    for (level, blocks) in level_blocks.iter().enumerate() {
+        let count = blocks.len();
+        let total_width = count as f32 * box_width + (count.saturating_sub(1)) as f32 * (h_spacing - box_width);
+        let start_x = (200.0 - total_width) / 2.0; // Center around 200pt
+
+        for (i, &idx) in blocks.iter().enumerate() {
+            layouts[idx] = BlockLayout {
+                x: start_x.max(10.0) + i as f32 * h_spacing,
+                y: 10.0 + level as f32 * v_spacing,
+            };
+        }
+    }
+
+    // Adjust panic/cleanup blocks to the right
+    for (idx, layout) in layouts.iter_mut().enumerate() {
+        let role = roles.get(&idx).copied().unwrap_or(BlockRole::Normal);
+        if role == BlockRole::Panic || role == BlockRole::Cleanup {
+            layout.x += h_spacing * 0.5;
+        }
+    }
+
+    layouts
+}
+
+/// Get fill and stroke colors for a block based on its role
+fn block_colors(role: BlockRole) -> (&'static str, &'static str) {
+    match role {
+        BlockRole::Entry => ("#e8f5e9", "#4caf50"),    // Green
+        BlockRole::Return => ("#e3f2fd", "#2196f3"),   // Blue
+        BlockRole::Panic => ("#ffebee", "#f44336"),    // Red
+        BlockRole::Cleanup => ("#fff3e0", "#ff9800"),  // Orange
+        BlockRole::Branch => ("#f3e5f5", "#9c27b0"),   // Purple
+        BlockRole::Loop => ("#fff8e1", "#ffc107"),     // Amber
+        BlockRole::Normal => ("#fafafa", "#9e9e9e"),   // Gray
+    }
+}
+
+// =============================================================================
 // Traversal Framework
 // =============================================================================
 
@@ -620,6 +854,11 @@ impl<'a> FunctionContext<'a> {
     /// Generate ASCII CFG
     pub fn ascii_cfg(&self) -> String {
         generate_ascii_cfg(self.body, &self.block_roles)
+    }
+
+    /// Generate native Typst CFG diagram
+    pub fn typst_cfg(&self) -> String {
+        generate_typst_cfg(self.body, &self.block_roles)
     }
 
     /// Get formatted property strings
