@@ -635,3 +635,296 @@ fn get_terminator_targets(term: &Terminator) -> Vec<usize> {
         }
     }
 }
+
+// =============================================================================
+// Lifetime Index - Variable Lexical Lifetimes
+// =============================================================================
+
+/// Source range with line and optional column precision
+#[derive(Clone, Debug, Default)]
+pub struct SourceRange {
+    pub start_line: usize,
+    pub start_col: usize,
+    pub end_line: usize,
+    pub end_col: usize,
+}
+
+impl SourceRange {
+    /// Format the range - show columns only for single-line ranges
+    pub fn format(&self) -> String {
+        if self.start_line == self.end_line {
+            // Single line: show column range
+            format!("{}:{}-{}", self.start_line, self.start_col, self.end_col)
+        } else {
+            // Multi-line: just show line range
+            format!("{}-{}", self.start_line, self.end_line)
+        }
+    }
+
+    /// Format with "line(s)" prefix
+    pub fn format_verbose(&self) -> String {
+        if self.start_line == self.end_line {
+            format!("line {}:{}-{}", self.start_line, self.start_col, self.end_col)
+        } else {
+            format!("lines {}-{}", self.start_line, self.end_line)
+        }
+    }
+}
+
+/// Lifetime information for a local variable
+#[derive(Clone, Debug)]
+pub struct LocalLifetime {
+    /// Local index
+    pub local: usize,
+    /// Where StorageLive is called (if any)
+    pub storage_live: Option<LocationKey>,
+    /// Where StorageDead is called (if any)
+    pub storage_dead: Option<LocationKey>,
+    /// Source range if mappable
+    pub source_range: Option<SourceRange>,
+}
+
+impl LocalLifetime {
+    /// Check if source range info is available
+    pub fn has_source_info(&self) -> bool {
+        self.source_range.is_some()
+    }
+
+    /// Format as a lifetime annotation (e.g., "'_1: lines 5-12" or "'_1: 5:3-15")
+    pub fn format_range(&self) -> String {
+        if let Some(range) = &self.source_range {
+            format!("'_{}: {}", self.local, range.format_verbose())
+        } else if let (Some(live), Some(dead)) = (&self.storage_live, &self.storage_dead) {
+            format!(
+                "'_{}: bb{}[{}] → bb{}[{}]",
+                self.local, live.block, live.statement, dead.block, dead.statement
+            )
+        } else {
+            format!("'_{}: <unknown>", self.local)
+        }
+    }
+
+    /// Get just the range portion without the lifetime name
+    pub fn range_str(&self) -> String {
+        if let Some(range) = &self.source_range {
+            range.format()
+        } else {
+            "<unknown>".to_string()
+        }
+    }
+}
+
+/// Index for tracking variable lexical lifetimes
+#[derive(Default)]
+pub struct LifetimeIndex {
+    /// Lifetime info for each local, indexed by local number
+    pub locals: HashMap<usize, LocalLifetime>,
+}
+
+impl LifetimeIndex {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Build lifetime index from a MIR body
+    ///
+    /// Scans for StorageLive/StorageDead pairs to determine lexical scope
+    pub fn from_body(body: &Body, span_index: &SpanIndex) -> Self {
+        let mut index = Self::new();
+
+        // Initialize entries for all locals
+        for (i, _decl) in body.local_decls().enumerate() {
+            index.locals.insert(
+                i,
+                LocalLifetime {
+                    local: i,
+                    storage_live: None,
+                    storage_dead: None,
+                    source_range: None,
+                },
+            );
+        }
+
+        // Scan for StorageLive/StorageDead
+        for (block_idx, block) in body.blocks.iter().enumerate() {
+            for (stmt_idx, stmt) in block.statements.iter().enumerate() {
+                match &stmt.kind {
+                    StatementKind::StorageLive(local) => {
+                        if let Some(lifetime) = index.locals.get_mut(local) {
+                            // Take first StorageLive (there may be multiple in loops)
+                            if lifetime.storage_live.is_none() {
+                                lifetime.storage_live = Some(LocationKey {
+                                    block: block_idx,
+                                    statement: stmt_idx,
+                                });
+                            }
+                        }
+                    }
+                    StatementKind::StorageDead(local) => {
+                        if let Some(lifetime) = index.locals.get_mut(local) {
+                            // Take last StorageDead
+                            lifetime.storage_dead = Some(LocationKey {
+                                block: block_idx,
+                                statement: stmt_idx,
+                            });
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        // Map to source lines
+        index.map_to_source_lines(body, span_index);
+
+        index
+    }
+
+    /// Map lifetimes to source ranges with line and column info
+    fn map_to_source_lines(&mut self, body: &Body, span_index: &SpanIndex) {
+        for lifetime in self.locals.values_mut() {
+            let start_info = lifetime.storage_live.as_ref().and_then(|loc| {
+                body.blocks
+                    .get(loc.block)
+                    .and_then(|b| b.statements.get(loc.statement))
+                    .and_then(|s| span_index.get(s.span.to_index()))
+            });
+
+            let end_info = lifetime.storage_dead.as_ref().and_then(|loc| {
+                body.blocks
+                    .get(loc.block)
+                    .and_then(|b| b.statements.get(loc.statement))
+                    .and_then(|s| span_index.get(s.span.to_index()))
+            });
+
+            if let (Some(start), Some(end)) = (start_info, end_info) {
+                lifetime.source_range = Some(SourceRange {
+                    start_line: start.line_start,
+                    start_col: start.col_start,
+                    end_line: end.line_end,
+                    end_col: end.col_end,
+                });
+            }
+        }
+    }
+
+    /// Get lifetime info for a local
+    pub fn get(&self, local: usize) -> Option<&LocalLifetime> {
+        self.locals.get(&local)
+    }
+
+    /// Iterate over all lifetimes
+    pub fn iter(&self) -> impl Iterator<Item = &LocalLifetime> {
+        self.locals.values()
+    }
+
+    /// Get lifetimes with known source ranges, sorted by local index
+    pub fn with_source_ranges(&self) -> Vec<&LocalLifetime> {
+        let mut result: Vec<_> = self
+            .locals
+            .values()
+            .filter(|l| l.source_range.is_some())
+            .collect();
+        result.sort_by_key(|l| l.local);
+        result
+    }
+}
+
+// =============================================================================
+// Extended Borrow Info with End Location
+// =============================================================================
+
+impl BorrowInfo {
+    /// Format as a lifetime range (e.g., "'b0: lines 5-12")
+    pub fn format_lifetime_range(&self, span_index: &SpanIndex, end_line: Option<usize>) -> String {
+        let start_line = span_index
+            .get(self.span_id)
+            .map(|info| info.line_start)
+            .unwrap_or(0);
+
+        if let Some(end) = end_line {
+            if start_line == end {
+                format!("'b{}: line {}", self.index, start_line)
+            } else {
+                format!("'b{}: lines {}-{}", self.index, start_line, end)
+            }
+        } else {
+            format!("'b{}: from line {}", self.index, start_line)
+        }
+    }
+}
+
+impl BorrowIndex {
+    /// Find the end location for a borrow (first kill point encountered)
+    pub fn find_borrow_end(&self, borrow_idx: usize, body: &Body) -> Option<LocationKey> {
+        let borrow = self.borrows.get(borrow_idx)?;
+        let borrower = borrow.borrower_local;
+
+        // Traverse from start until we find the kill point
+        let mut visited = std::collections::HashSet::new();
+        let mut worklist = vec![(borrow.start_location.block, borrow.start_location.statement)];
+
+        while let Some((block_idx, mut stmt_idx)) = worklist.pop() {
+            if !visited.insert((block_idx, stmt_idx)) {
+                continue;
+            }
+
+            let block = &body.blocks[block_idx];
+
+            while stmt_idx < block.statements.len() {
+                let stmt = &block.statements[stmt_idx];
+                if kills_borrow(stmt, borrower) {
+                    return Some(LocationKey {
+                        block: block_idx,
+                        statement: stmt_idx,
+                    });
+                }
+                stmt_idx += 1;
+            }
+
+            // Check terminator
+            if terminator_kills_borrow(&block.terminator, borrower) {
+                return Some(LocationKey {
+                    block: block_idx,
+                    statement: block.statements.len(),
+                });
+            }
+
+            // Propagate to successors
+            for target in get_terminator_targets(&block.terminator) {
+                worklist.push((target, 0));
+            }
+        }
+
+        None
+    }
+
+    /// Get the source line range for a borrow
+    pub fn borrow_source_range(
+        &self,
+        borrow_idx: usize,
+        body: &Body,
+        span_index: &SpanIndex,
+    ) -> Option<(usize, usize)> {
+        let borrow = self.borrows.get(borrow_idx)?;
+
+        let start_line = span_index.get(borrow.span_id).map(|info| info.line_start)?;
+
+        let end_line = self.find_borrow_end(borrow_idx, body).and_then(|loc| {
+            body.blocks.get(loc.block).and_then(|block| {
+                if loc.statement < block.statements.len() {
+                    span_index
+                        .get(block.statements[loc.statement].span.to_index())
+                        .map(|info| info.line_end)
+                } else {
+                    // Terminator
+                    span_index
+                        .get(block.terminator.span.to_index())
+                        .map(|info| info.line_end)
+                }
+            })
+        });
+
+        Some((start_line, end_line.unwrap_or(start_line)))
+    }
+}

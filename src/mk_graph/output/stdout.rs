@@ -83,14 +83,20 @@ fn generate_function_text(ctx: &FunctionContext) -> String {
         out.push_str(&format!("│ Properties: {}\n", props.join(", ")));
     }
 
-    // Locals
+    // Locals with lifetime info
     out.push_str("│\n│ Locals:\n");
     for (i, (index, decl)) in ctx.body.local_decls().enumerate() {
         let note = if i == 0 { " (return)" } else { "" };
-        out.push_str(&format!("│   {}: {}{}\n", index, decl.ty, note));
+        // Add lifetime range if available
+        let lifetime_str = ctx
+            .lifetime_of(i)
+            .and_then(|l| l.source_range.as_ref())
+            .map(|r| format!(" [{}]", r.format()))
+            .unwrap_or_default();
+        out.push_str(&format!("│   {}: {}{}{}\n", index, decl.ty, note, lifetime_str));
     }
 
-    // Borrows
+    // Borrows with lifetime ranges
     if ctx.has_borrows() {
         out.push_str("│\n│ Borrows:\n");
         for borrow in ctx.borrows() {
@@ -99,14 +105,26 @@ fn generate_function_text(ctx: &FunctionContext) -> String {
                 super::traversal::BorrowKindInfo::Mutable => "&mut",
                 super::traversal::BorrowKindInfo::Shallow => "&shallow",
             };
+            // Add borrow lifetime range if available
+            let range_str = ctx
+                .borrow_range(borrow.index)
+                .map(|(start, end)| {
+                    if start == end {
+                        format!(" [line {}]", start)
+                    } else {
+                        format!(" [lines {}-{}]", start, end)
+                    }
+                })
+                .unwrap_or_default();
             out.push_str(&format!(
-                "│   #{}: _{} = {}_{} at bb{}[{}]\n",
+                "│   #{}: _{} = {}_{} at bb{}[{}]{}\n",
                 borrow.index,
                 borrow.borrower_local,
                 kind,
                 borrow.borrowed_local,
                 borrow.start_location.block,
-                borrow.start_location.statement
+                borrow.start_location.statement,
+                range_str
             ));
         }
     }

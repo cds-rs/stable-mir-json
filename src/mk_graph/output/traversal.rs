@@ -11,7 +11,9 @@ use stable_mir::mir::{
 };
 use stable_mir::ty::IndexedVal;
 
-pub use crate::mk_graph::index::{BorrowIndex, BorrowInfo, BorrowKindInfo, SpanIndex};
+pub use crate::mk_graph::index::{
+    BorrowIndex, BorrowInfo, BorrowKindInfo, LifetimeIndex, LocalLifetime, SpanIndex,
+};
 // Re-export SpanInfo so output modules can import it from here
 pub use crate::printer::SpanInfo;
 use crate::render::{
@@ -888,6 +890,8 @@ pub struct FunctionContext<'a> {
     pub block_roles: HashMap<usize, BlockRole>,
     pub source: Option<String>,
     pub borrow_index: BorrowIndex,
+    pub lifetime_index: LifetimeIndex,
+    pub span_index: &'a SpanIndex,
 }
 
 impl<'a> FunctionContext<'a> {
@@ -896,12 +900,13 @@ impl<'a> FunctionContext<'a> {
         short_name: &'a str,
         full_name: &'a str,
         body: &'a Body,
-        span_index: &SpanIndex,
+        span_index: &'a SpanIndex,
     ) -> Self {
         let properties = analyze_function(body, short_name);
         let block_roles = infer_block_roles(body);
         let source = extract_function_source_from_index(span_index, body);
         let borrow_index = BorrowIndex::from_body(body, span_index);
+        let lifetime_index = LifetimeIndex::from_body(body, span_index);
 
         Self {
             short_name,
@@ -911,6 +916,8 @@ impl<'a> FunctionContext<'a> {
             block_roles,
             source,
             borrow_index,
+            lifetime_index,
+            span_index,
         }
     }
 
@@ -986,5 +993,61 @@ impl<'a> FunctionContext<'a> {
             borrow.start_location.block,
             borrow.start_location.statement
         )
+    }
+
+    // =========================================================================
+    // Lifetime helpers
+    // =========================================================================
+
+    /// Check if any locals have lifetime info
+    pub fn has_lifetimes(&self) -> bool {
+        self.lifetime_index
+            .locals
+            .values()
+            .any(|l| l.has_source_info())
+    }
+
+    /// Get all lifetimes with source range info
+    pub fn lifetimes_with_ranges(&self) -> Vec<&LocalLifetime> {
+        self.lifetime_index.with_source_ranges()
+    }
+
+    /// Get lifetime for a specific local
+    pub fn lifetime_of(&self, local: usize) -> Option<&LocalLifetime> {
+        self.lifetime_index.get(local)
+    }
+
+    /// Get borrow source range (start_line, end_line)
+    pub fn borrow_range(&self, borrow_idx: usize) -> Option<(usize, usize)> {
+        self.borrow_index
+            .borrow_source_range(borrow_idx, self.body, self.span_index)
+    }
+
+    /// Format borrow with its source line range
+    pub fn format_borrow_range(&self, borrow: &BorrowInfo) -> String {
+        let kind = match borrow.kind {
+            BorrowKindInfo::Shared => "&",
+            BorrowKindInfo::Mutable => "&mut",
+            BorrowKindInfo::Shallow => "&shallow",
+        };
+
+        if let Some((start, end)) = self.borrow_range(borrow.index) {
+            if start == end {
+                format!(
+                    "_{} = {}_{} (line {})",
+                    borrow.borrower_local, kind, borrow.borrowed_local, start
+                )
+            } else {
+                format!(
+                    "_{} = {}_{} (lines {}-{})",
+                    borrow.borrower_local, kind, borrow.borrowed_local, start, end
+                )
+            }
+        } else {
+            format!(
+                "_{} = {}_{}",
+                borrow.borrower_local, kind, borrow.borrowed_local
+            )
+        }
     }
 }
