@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>fn_ptr_in_arg - MIR Walkthrough</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --bg-section: #16213e;
+            --bg-block: #0f0f1a;
+            --bg-terminator: #1a1a3e;
+            --text: #eee;
+            --text-dim: #888;
+            --accent: #8be9fd;
+            --green: #50fa7b;
+            --purple: #bd93f9;
+            --pink: #ff79c6;
+            --border: #333;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            margin: 0;
+            padding: 2rem;
+        }
+        h1 {
+            color: var(--accent);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+        .function {
+            background: var(--bg-section);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .function h2 {
+            color: var(--accent);
+            margin: 0 0 0.5rem 0;
+        }
+        .fn-meta {
+            color: var(--text-dim);
+            margin: 0 0 1.5rem 0;
+            font-size: 0.9rem;
+        }
+        .fn-meta code {
+            background: var(--bg-block);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.85rem;
+        }
+        .borrows-section {
+            margin-bottom: 1rem;
+        }
+        .borrows-section summary {
+            cursor: pointer;
+            color: var(--accent);
+            font-weight: 600;
+            padding: 0.5rem 0;
+        }
+        .borrows-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin: 0.5rem 0;
+        }
+        .borrows-table th {
+            text-align: left;
+            padding: 0.4rem 0.8rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-dim);
+            font-weight: normal;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+        .borrows-table td {
+            padding: 0.4rem 0.8rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .borrow-id {
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+        .borrow-kind {
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            font-family: monospace;
+        }
+        .borrow-kind.shared {
+            background: rgba(80, 250, 123, 0.2);
+            color: var(--green);
+        }
+        .borrow-kind.mutable {
+            background: rgba(255, 121, 198, 0.2);
+            color: var(--pink);
+        }
+        .borrow-kind.shallow {
+            background: rgba(139, 233, 253, 0.2);
+            color: var(--accent);
+        }
+        .borrows-note {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            font-style: italic;
+            margin: 0.5rem 0;
+        }
+        .block {
+            background: var(--bg-block);
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .block-header {
+            background: var(--border);
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            color: var(--pink);
+            font-family: monospace;
+        }
+        .annotated-table {
+            width: 100%;
+            min-width: 700px;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+        }
+        .annotated-table th {
+            text-align: left;
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-dim);
+            font-weight: normal;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .annotated-table td {
+            padding: 0.5rem 1rem;
+            vertical-align: top;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .annotated-table tr:last-child td {
+            border-bottom: none;
+        }
+        .col-source { width: 30%; color: var(--text); }
+        .col-mir { width: 35%; color: var(--green); }
+        .col-annot { width: 35%; color: var(--purple); }
+        .terminator {
+            background: var(--bg-terminator);
+        }
+        .terminator .col-mir {
+            color: var(--pink);
+        }
+        .recursive {
+            background: rgba(255, 121, 198, 0.15);
+        }
+        .recursive .col-annot {
+            color: var(--pink);
+            font-weight: 600;
+        }
+        .empty { color: var(--text-dim); font-style: italic; }
+        .graph-section {
+            background: var(--bg-section);
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+        .graph-section summary {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        .graph-section summary:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        .graph-container {
+            padding: 1rem;
+            overflow-x: auto;
+            background: var(--bg-block);
+            border-radius: 0 0 8px 8px;
+        }
+        .graph-container svg {
+            width: 100%;
+            height: auto;
+            min-height: 400px;
+        }
+        .graph-controls {
+            padding: 0.5rem 1rem;
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .graph-controls button {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .graph-controls button:hover {
+            background: var(--border);
+        }
+        .fullscreen-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            background: var(--bg);
+            flex-direction: column;
+        }
+        .fullscreen-overlay.active {
+            display: flex;
+        }
+        .fullscreen-overlay .fs-controls {
+            flex-shrink: 0;
+            padding: 0.5rem 1rem;
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-section);
+            border-bottom: 1px solid var(--border);
+        }
+        .fullscreen-overlay .fs-controls button {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .fullscreen-overlay .fs-controls button:hover {
+            background: var(--border);
+        }
+        .fullscreen-overlay .fs-graph {
+            flex: 1;
+            overflow: hidden;
+        }
+        .fullscreen-overlay .fs-graph svg {
+            width: 100%;
+            height: 100%;
+        }
+        .source-section {
+            background: var(--bg-section);
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+        .source-section summary {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        .source-section summary:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        .source-code {
+            margin: 0;
+            padding: 1rem 1.5rem;
+            background: var(--bg-block);
+            border-radius: 0 0 8px 8px;
+            overflow-x: auto;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: var(--text);
+        }
+        /* Explorer panel styles */
+        .explorer-section {
+            background: var(--bg-section);
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        .explorer-section summary {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        .explorer-section summary:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        .explorer-container {
+            display: flex;
+            height: 500px;
+            border-top: 1px solid var(--border);
+        }
+        .explorer-graph {
+            flex: 1;
+            min-width: 0;
+            background: var(--bg);
+        }
+        .explorer-context {
+            width: 300px;
+            background: var(--bg-block);
+            border-left: 1px solid var(--border);
+            padding: 1rem;
+            overflow-y: auto;
+            font-size: 0.85rem;
+        }
+        .explorer-context h3 {
+            color: var(--accent);
+            font-size: 1.1rem;
+            margin: 0 0 0.5rem 0;
+            font-family: monospace;
+        }
+        .explorer-context .badge {
+            display: inline-block;
+            background: var(--bg);
+            color: var(--text-dim);
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+        }
+        .explorer-context .badge.entry { background: var(--green); color: var(--bg); }
+        .explorer-context .badge.exit { background: #bd93f9; color: var(--bg); }
+        .explorer-context .badge.branchpoint { background: #ffb86c; color: var(--bg); }
+        .explorer-context .badge.mergepoint { background: var(--accent); color: var(--bg); }
+        .explorer-context .summary { color: var(--text-dim); margin-bottom: 1rem; }
+        .explorer-context h4 {
+            color: var(--text-dim);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 1rem 0 0.5rem 0;
+        }
+        .explorer-context ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .explorer-context li {
+            padding: 0.3rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-family: monospace;
+        }
+        .explorer-context .mir { color: var(--green); }
+        .explorer-context .annotation { color: #bd93f9; font-size: 0.75rem; display: block; }
+        .explorer-context .term { color: var(--pink); }
+        .explorer-context .locals-list { max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim); }
+        .explorer-edges {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            margin-top: 0.5rem;
+        }
+        .edge-btn {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 0.8rem;
+        }
+        .edge-btn:hover { border-color: var(--accent); }
+        .edge-btn .target { color: var(--green); font-family: monospace; }
+        .edge-btn .hint { color: var(--text-dim); font-size: 0.7rem; display: block; }
+        .edge-btn.cleanup { border-color: #ff5555; border-style: dashed; }
+        .explorer-path {
+            padding: 0.5rem 1rem;
+            background: var(--bg);
+            font-family: monospace;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .explorer-path .label { color: var(--text-dim); }
+        .explorer-path .crumb { color: var(--text-dim); }
+        .explorer-path .crumb.current { color: var(--pink); font-weight: bold; }
+        .explorer-path button {
+            margin-left: auto;
+            background: var(--bg-section);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.2rem 0.6rem;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/languages/rust.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+    <script src="https://unpkg.com/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
+</head>
+<body>
+    <h1>fn_ptr_in_arg</h1>
+    <section class="function">
+    <h2>main</h2>
+    <p class="fn-meta">5 basic blocks — <code>main</code></p>
+    <details class="borrows-section" open>
+        <summary>Borrows</summary>
+        <table class="borrows-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Borrow</th>
+                    <th>Kind</th>
+                    <th>Created At</th>
+                    <th>Borrowed</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="borrow-id">0</td>
+                    <td><code>_5</code></td>
+                    <td><span class="borrow-kind shared">&amp;</span></td>
+                    <td><code>bb1[0]</code></td>
+                    <td><code>_3</code></td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="borrows-note">Borrows tracked conservatively: active from creation until reassignment or scope end.</p>
+    </details>
+    <details class="explorer-section">
+        <summary>Interactive Graph Explorer</summary>
+        <div class="explorer-path" id="path-main">
+            <span class="label">PATH:</span>
+            <span class="breadcrumb"></span>
+            <button onclick="explorers['main'].reset()">Reset</button>
+            <button onclick="explorers['main'].goBack()">← Back</button>
+        </div>
+        <div class="explorer-container">
+            <div class="explorer-graph" id="cy-main"></div>
+            <div class="explorer-context" id="ctx-main">
+                <h3 id="block-main">bb0</h3>
+                <span class="badge" id="role-main">entry</span>
+                <div class="summary" id="summary-main"></div>
+                <h4>Locals</h4>
+                <ul id="locals-main" class="locals-list"></ul>
+                <h4>Statements</h4>
+                <ul id="stmts-main"></ul>
+                <h4>Terminator</h4>
+                <div id="term-main"></div>
+                <h4>Next</h4>
+                <div class="explorer-edges" id="edges-main"></div>
+            </div>
+        </div>
+        <script>
+            (function() {
+                const data = {"name":"main","short_name":"main","blocks":[{"id":0,"statements":[{"source":"let bytes: [u8; 8] = [0x15, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];","mir":"_1 = Array(21, 0, 0, 0, 0, 0, 0, 0)","annotation":"Construct aggregate"},{"source":"let opt: Option<[u8; 8]> = Some(bytes);","mir":"_2 = Option::Some(_1)","annotation":"Construct aggregate"}],"terminator":{"source":"let result = opt.map(u64::from_le_bytes);","kind":"call","mir":"_3 = map(_2, ())","annotation":"Call map","edges":[{"target":1,"label":"return","kind":"normal","annotation":"After map returns"}]},"predecessors":[],"role":"entry","summary":"Entry point"},{"id":1,"statements":[{"source":"","mir":"_5 = &_3","annotation":"Shared borrow"},{"source":"","mir":"_6 = 0","annotation":"Load constant"},{"source":"","mir":"_4 = Tuple(move _5, move _6)","annotation":"Construct aggregate"},{"source":"","mir":"_7 = _4.0","annotation":"Copy value"},{"source":"","mir":"_8 = _4.1","annotation":"Copy value"}],"terminator":{"source":"","kind":"call","mir":"_9 = eq(_7, _8)","annotation":"Call eq","edges":[{"target":2,"label":"return","kind":"normal","annotation":"After eq returns"}]},"predecessors":[0],"role":"linear","summary":"Shared borrow"},{"id":2,"statements":[],"terminator":{"source":"","kind":"switch","mir":"switchInt(move _9)","annotation":"Branch based on value of move _9","edges":[{"target":4,"label":"0","kind":"branch","annotation":"If move _9 == 0"},{"target":3,"label":"else","kind":"otherwise","annotation":"Otherwise (no match)"}]},"predecessors":[1],"role":"branchpoint","summary":"Branches: Branch based on value of move _9"},{"id":3,"statements":[],"terminator":{"source":"}","kind":"return","mir":"return","annotation":"Return from function","edges":[]},"predecessors":[2],"role":"exit","summary":"Function returns"},{"id":4,"statements":[{"source":"","mir":"_10 = AssertKind::Eq()","annotation":"Construct aggregate"},{"source":"","mir":"_12 = Option::None()","annotation":"Construct aggregate"}],"terminator":{"source":"","kind":"call","mir":"_11 = assert_failed(move _10, _7, _8, move _12)","annotation":"Call assert_failed","edges":[]},"predecessors":[2],"role":"linear","summary":"Construct aggregate"}],"locals":[{"name":"_0","ty":"()","source_name":null,"assignments":[]},{"name":"_1","ty":"[u8; 8]","source_name":"bytes","assignments":[{"block_id":0,"value":"Array(21, 0, 0, 0, 0, 0, 0, 0)"}]},{"name":"_2","ty":"std::option::Option<[u8; 8]>","source_name":"opt","assignments":[{"block_id":0,"value":"Option::Some(_1)"}]},{"name":"_3","ty":"std::option::Option<u64>","source_name":"result","assignments":[]},{"name":"_4","ty":"(&std::option::Option<u64>, &std::option::Option<u64>)","source_name":null,"assignments":[{"block_id":1,"value":"Tuple(move _5, move _6)"}]},{"name":"_5","ty":"&std::option::Option<u64>","source_name":null,"assignments":[{"block_id":1,"value":"&_3"}]},{"name":"_6","ty":"&std::option::Option<u64>","source_name":null,"assignments":[{"block_id":1,"value":"0"}]},{"name":"_7","ty":"&std::option::Option<u64>","source_name":"left_val","assignments":[{"block_id":1,"value":"_4.0"}]},{"name":"_8","ty":"&std::option::Option<u64>","source_name":"right_val","assignments":[{"block_id":1,"value":"_4.1"}]},{"name":"_9","ty":"bool","source_name":null,"assignments":[]},{"name":"_10","ty":"core::panicking::AssertKind","source_name":"kind","assignments":[{"block_id":4,"value":"AssertKind::Eq()"}]},{"name":"_11","ty":"!","source_name":null,"assignments":[]},{"name":"_12","ty":"std::option::Option<std::fmt::Arguments<'_>>","source_name":null,"assignments":[{"block_id":4,"value":"Option::None()"}]}],"entry_block":0};
+                if (typeof explorers === 'undefined') window.explorers = {};
+
+                // Wait for details to open before initializing
+                const details = document.currentScript.closest('details');
+                let initialized = false;
+
+                details.addEventListener('toggle', function() {
+                    if (details.open && !initialized) {
+                        initialized = true;
+                        setTimeout(() => initExplorer('main', data), 50);
+                    }
+                });
+            })();
+        </script>
+    </details>
+    <div class="block">
+        <div class="block-header">bb0</div>
+        <table class="annotated-table">
+            <thead>
+                <tr><th class="col-source">Source</th><th class="col-mir">MIR</th><th class="col-annot">Annotation</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="col-source">let bytes: [u8; 8] = [0x15, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];</td>
+                    <td class="col-mir">_1 = Array(21, 0, 0, 0, 0, 0, 0, 0)</td>
+                    <td class="col-annot">Construct aggregate</td>
+                </tr>
+                <tr>
+                    <td class="col-source">let opt: Option&lt;[u8; 8]&gt; = Some(bytes);</td>
+                    <td class="col-mir">_2 = Option::Some(_1)</td>
+                    <td class="col-annot">Construct aggregate</td>
+                </tr>
+                <tr class="terminator">
+                    <td class="col-source">let result = opt.map(u64::from_le_bytes);</td>
+                    <td class="col-mir">→ _3 = map(_2, ()) → bb1</td>
+                    <td class="col-annot">Call map</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="block">
+        <div class="block-header">bb1</div>
+        <table class="annotated-table">
+            <thead>
+                <tr><th class="col-source">Source</th><th class="col-mir">MIR</th><th class="col-annot">Annotation</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="col-source"><span class="empty">—</span></td>
+                    <td class="col-mir">_5 = &amp;_3</td>
+                    <td class="col-annot">Shared borrow</td>
+                </tr>
+                <tr>
+                    <td class="col-source"><span class="empty">—</span></td>
+                    <td class="col-mir">_6 = 0</td>
+                    <td class="col-annot">Load constant</td>
+                </tr>
+                <tr>
+                    <td class="col-source"><span class="empty">—</span></td>
+                    <td class="col-mir">_4 = Tuple(move _5, move _6)</td>
+                    <td class="col-annot">Construct aggregate</td>
+                </tr>
+                <tr>
+                    <td class="col-source"><span class="empty">—</span></td>
+                    <td class="col-mir">_7 = _4.0</td>
+                    <td class="col-annot">Copy value</td>
+                </tr>
+                <tr>
+                    <td class="col-source"><span class="empty">—</span></td>
+                    <td class="col-mir">_8 = _4.1</td>
+                    <td class="col-annot">Copy value</td>
+                </tr>
+                <tr class="terminator">
+                    <td class="col-source"><span class="empty">—</span></td>
+                    <td class="col-mir">→ _9 = eq(_7, _8) → bb2</td>
+                    <td class="col-annot">Call eq</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="block">
+        <div class="block-header">bb2</div>
+        <table class="annotated-table">
+            <thead>
+                <tr><th class="col-source">Source</th><th class="col-mir">MIR</th><th class="col-annot">Annotation</th></tr>
+            </thead>
+            <tbody>
+                <tr class="terminator">
+                    <td class="col-source"><span class="empty">—</span></td>
+                    <td class="col-mir">→ switch(move _9) [0→bb4; else→bb3]</td>
+                    <td class="col-annot">Branch on move _9</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="block">
+        <div class="block-header">bb3</div>
+        <table class="annotated-table">
+            <thead>
+                <tr><th class="col-source">Source</th><th class="col-mir">MIR</th><th class="col-annot">Annotation</th></tr>
+            </thead>
+            <tbody>
+                <tr class="terminator">
+                    <td class="col-source">}</td>
+                    <td class="col-mir">→ return</td>
+                    <td class="col-annot">Return from function</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="block">
+        <div class="block-header">bb4</div>
+        <table class="annotated-table">
+            <thead>
+                <tr><th class="col-source">Source</th><th class="col-mir">MIR</th><th class="col-annot">Annotation</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="col-source"><span class="empty">—</span></td>
+                    <td class="col-mir">_10 = AssertKind::Eq()</td>
+                    <td class="col-annot">Construct aggregate</td>
+                </tr>
+                <tr>
+                    <td class="col-source"><span class="empty">—</span></td>
+                    <td class="col-mir">_12 = Option::None()</td>
+                    <td class="col-annot">Construct aggregate</td>
+                </tr>
+                <tr class="terminator">
+                    <td class="col-source"><span class="empty">—</span></td>
+                    <td class="col-mir">→ _11 = assert_failed(move _10, _7, _8, move _12)</td>
+                    <td class="col-annot">Call assert_failed</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+    <script>
+    
+function renderLocalHtml(local, escapeHtml) {
+    const srcName = local.source_name
+        ? ` <span class="annotation">(${escapeHtml(local.source_name)})</span>`
+        : '';
+    const assigns = local.assignments.length > 0
+        ? local.assignments.map(a => `bb${a.block_id}: ${escapeHtml(a.value)}`).join(', ')
+        : '(arg/ret)';
+    return `<li><span class="mir">${escapeHtml(local.name)}: ${escapeHtml(local.ty)}</span>${srcName}
+           <br><span class="annotation" style="margin-left:1em">${assigns}</span></li>`;
+}
+
+    
+function initExplorer(id, data) {
+    const cy = cytoscape({
+        container: document.getElementById(`cy-${id}`),
+        elements: buildElements(data),
+        style: [
+            { selector: 'node', style: {
+                'label': 'data(label)',
+                'text-valign': 'center',
+                'text-halign': 'center',
+                'background-color': '#3a3a5e',
+                'color': '#eee',
+                'font-size': '11px',
+                'font-family': 'monospace',
+                'width': 50,
+                'height': 30,
+                'shape': 'roundrectangle',
+                'border-width': 2,
+                'border-color': '#555'
+            }},
+            { selector: 'node.entry', style: { 'border-color': '#50fa7b', 'border-width': 3 }},
+            { selector: 'node.exit', style: { 'border-color': '#bd93f9', 'border-width': 3 }},
+            { selector: 'node.branchpoint', style: { 'border-color': '#ffb86c', 'border-width': 3 }},
+            { selector: 'node.visited', style: { 'background-color': '#2a4a6e' }},
+            { selector: 'node.current', style: {
+                'background-color': '#50fa7b',
+                'color': '#1a1a2e',
+                'border-color': '#50fa7b',
+                'font-weight': 'bold'
+            }},
+            { selector: 'node.dim', style: { 'opacity': 0.35 }},
+            { selector: 'edge', style: {
+                'width': 2,
+                'line-color': '#555',
+                'target-arrow-color': '#555',
+                'target-arrow-shape': 'triangle',
+                'curve-style': 'bezier',
+                'label': 'data(label)',
+                'font-size': '9px',
+                'color': '#888'
+            }},
+            { selector: 'edge.cleanup', style: {
+                'line-style': 'dashed',
+                'line-color': '#ff5555',
+                'target-arrow-color': '#ff5555'
+            }},
+            { selector: 'edge.taken', style: {
+                'line-color': '#50fa7b',
+                'target-arrow-color': '#50fa7b',
+                'width': 3
+            }}
+        ],
+        layout: { name: 'breadthfirst', directed: true, padding: 30, spacingFactor: 1.2 }
+    });
+
+    const state = { path: [], current: null, data: data, cy: cy, id: id };
+    explorers[id] = {
+        goTo: (blockId) => goToBlock(state, blockId),
+        goBack: () => goBack(state),
+        reset: () => resetExplorer(state)
+    };
+
+    cy.on('tap', 'node', (e) => goToBlock(state, parseInt(e.target.id().replace('bb', ''))));
+    cy.on('tap', 'edge', (e) => goToBlock(state, parseInt(e.target.target().id().replace('bb', ''))));
+
+    goToBlock(state, data.entry_block);
+}
+
+function buildElements(data) {
+    const nodes = data.blocks.map(b => ({
+        data: { id: `bb${b.id}`, label: `bb${b.id}` },
+        classes: b.role
+    }));
+    const edges = [];
+    for (const block of data.blocks) {
+        for (const edge of block.terminator.edges) {
+            edges.push({
+                data: {
+                    id: `bb${block.id}-bb${edge.target}`,
+                    source: `bb${block.id}`,
+                    target: `bb${edge.target}`,
+                    label: edge.label
+                },
+                classes: edge.kind === 'cleanup' ? 'cleanup' : ''
+            });
+        }
+    }
+    return { nodes, edges };
+}
+
+function goToBlock(state, blockId) {
+    const { data, cy, id } = state;
+    if (blockId < 0 || blockId >= data.blocks.length) return;
+    const block = data.blocks[blockId];
+
+    if (state.current !== null && state.current !== blockId) {
+        if (state.path[state.path.length - 1] !== state.current) {
+            state.path.push(state.current);
+        }
+    }
+    state.current = blockId;
+
+    cy.nodes().removeClass('current visited dim');
+    cy.edges().removeClass('taken');
+    const visited = new Set([...state.path, blockId]);
+    state.path.forEach(v => cy.$(`#bb${v}`).addClass('visited'));
+    cy.$(`#bb${blockId}`).addClass('current');
+    cy.nodes().forEach(n => {
+        if (!visited.has(parseInt(n.id().replace('bb', '')))) n.addClass('dim');
+    });
+    for (let i = 0; i < state.path.length; i++) {
+        const from = state.path[i], to = i + 1 < state.path.length ? state.path[i + 1] : blockId;
+        cy.$(`#bb${from}-bb${to}`).addClass('taken');
+    }
+    cy.animate({ center: { eles: cy.$(`#bb${blockId}`) }, duration: 150 });
+
+    updateContext(state, block);
+    updatePath(state);
+}
+
+function goBack(state) {
+    if (state.path.length > 0) {
+        const prev = state.path.pop();
+        state.current = null;
+        goToBlock(state, prev);
+    }
+}
+
+function resetExplorer(state) {
+    state.path = [];
+    state.current = null;
+    state.cy.nodes().removeClass('current visited dim');
+    state.cy.edges().removeClass('taken');
+    goToBlock(state, state.data.entry_block);
+}
+
+function updateContext(state, block) {
+    const { id, data } = state;
+    document.getElementById(`block-${id}`).textContent = `bb${block.id}`;
+    const badge = document.getElementById(`role-${id}`);
+    badge.textContent = block.role;
+    badge.className = `badge ${block.role}`;
+    document.getElementById(`summary-${id}`).textContent = block.summary;
+
+    // Populate locals
+    const localsList = document.getElementById(`locals-${id}`);
+    localsList.innerHTML = data.locals.map(l => renderLocalHtml(l, escapeHtml)).join('');
+
+    const stmts = document.getElementById(`stmts-${id}`);
+    stmts.innerHTML = block.statements.length === 0
+        ? '<li style="color:#888">(none)</li>'
+        : block.statements.map(s =>
+            `<li><span class="mir">${escapeHtml(s.mir)}</span><span class="annotation">${escapeHtml(s.annotation)}</span></li>`
+          ).join('');
+
+    document.getElementById(`term-${id}`).innerHTML =
+        `<span class="term">${escapeHtml(block.terminator.mir)}</span><span class="annotation">${escapeHtml(block.terminator.annotation)}</span>`;
+
+    const edges = document.getElementById(`edges-${id}`);
+    edges.innerHTML = block.terminator.edges.map(e => {
+        const cleanupClass = e.kind === 'cleanup' ? ' cleanup' : '';
+        const labelSpan = e.label ? `<span class="label">${escapeHtml(e.label)}</span>` : '';
+        return `<button class="edge-btn${cleanupClass}" onclick="explorers['${id}'].goTo(${e.target})">
+            <span class="target">→ bb${e.target}</span> ${labelSpan}
+            <span class="hint">${escapeHtml(e.annotation)}</span></button>`;
+    }).join('');
+}
+
+function updatePath(state) {
+    const crumb = document.querySelector(`#path-${state.id} .breadcrumb`);
+    const full = [...state.path, state.current];
+    crumb.innerHTML = full.map((b, i) => {
+        const currentClass = i === full.length - 1 ? ' current' : '';
+        return `<span class="crumb${currentClass}">bb${b}</span>`;
+    }).join(' → ');
+}
+
+function escapeHtml(s) {
+    if (!s) return '';
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+    </script>
+</body>
+</html>
