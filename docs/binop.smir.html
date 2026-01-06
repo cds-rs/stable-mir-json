@@ -53,6 +53,62 @@
             border-radius: 3px;
             font-size: 0.85rem;
         }
+        .borrows-section {
+            margin-bottom: 1rem;
+        }
+        .borrows-section summary {
+            cursor: pointer;
+            color: var(--accent);
+            font-weight: 600;
+            padding: 0.5rem 0;
+        }
+        .borrows-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin: 0.5rem 0;
+        }
+        .borrows-table th {
+            text-align: left;
+            padding: 0.4rem 0.8rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-dim);
+            font-weight: normal;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+        .borrows-table td {
+            padding: 0.4rem 0.8rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .borrow-id {
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+        .borrow-kind {
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            font-family: monospace;
+        }
+        .borrow-kind.shared {
+            background: rgba(80, 250, 123, 0.2);
+            color: var(--green);
+        }
+        .borrow-kind.mutable {
+            background: rgba(255, 121, 198, 0.2);
+            color: var(--pink);
+        }
+        .borrow-kind.shallow {
+            background: rgba(139, 233, 253, 0.2);
+            color: var(--accent);
+        }
+        .borrows-note {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            font-style: italic;
+            margin: 0.5rem 0;
+        }
         .block {
             background: var(--bg-block);
             border-radius: 6px;
