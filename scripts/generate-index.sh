@@ -45,7 +45,11 @@ cat > "$outdir/index.html" << 'EOF'
             border: 1px solid var(--border);
         }
         .card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); border-color: var(--accent); }
-        .card-title { color: var(--green); font-family: 'SF Mono', 'Fira Code', monospace; font-size: 1rem; margin: 0; }
+        .card-title { color: var(--green); font-family: 'SF Mono', 'Fira Code', monospace; font-size: 1rem; margin: 0 0 0.5rem 0; }
+        .card-links { display: flex; gap: 0.75rem; font-size: 0.85rem; }
+        .card-links a { color: var(--text-dim); text-decoration: none; }
+        .card-links a:hover { color: var(--accent); }
+        .card-links .separator { color: var(--border); }
     </style>
 </head>
 <body>
@@ -61,7 +65,12 @@ EOF
 for html in "$outdir"/*.smir.html; do
     [ -f "$html" ] || continue
     name=$(basename "$html" .smir.html)
-    echo "        <a class=\"card\" href=\"${name}.smir.html\"><div class=\"card-title\">${name}</div></a>" >> "$outdir/index.html"
+    svg="${outdir}/${name}.smir.svg"
+    if [ -f "$svg" ]; then
+        echo "        <div class=\"card\"><div class=\"card-title\">${name}</div><div class=\"card-links\"><a href=\"${name}.smir.html\">HTML</a><span class=\"separator\">|</span><a href=\"${name}.smir.svg\">SVG</a></div></div>" >> "$outdir/index.html"
+    else
+        echo "        <div class=\"card\"><div class=\"card-title\">${name}</div><div class=\"card-links\"><a href=\"${name}.smir.html\">HTML</a></div></div>" >> "$outdir/index.html"
+    fi
 done
 
 # Add a card for each .wasm-explore.html file
