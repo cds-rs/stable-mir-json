@@ -16,7 +16,7 @@ use crate::printer::{collect_smir, SmirJson};
 use crate::render::short_fn_name;
 use crate::MonoItemKind;
 
-use super::traversal::{BlockRole, FunctionContext, SpanIndex};
+use super::traversal::{BlockRole, FunctionContext, SpanIndex, TypeIndex};
 
 /// Entry point to generate Typst file
 pub fn emit_typstfile(tcx: TyCtxt<'_>) {
@@ -45,8 +45,9 @@ fn generate_typst(smir: &SmirJson) -> String {
     // Preamble
     content.push_str(&generate_preamble());
 
-    // Build span index for source lookups
+    // Build indices for lookups
     let span_index = SpanIndex::from_spans(&smir.spans);
+    let type_index = TypeIndex::from_types(&smir.types);
 
     // Generate content for each function
     for item in &smir.items {
@@ -62,7 +63,7 @@ fn generate_typst(smir: &SmirJson) -> String {
         }
 
         let short_name = short_fn_name(name);
-        let ctx = FunctionContext::new(&short_name, name, body, &span_index);
+        let ctx = FunctionContext::new(&short_name, name, body, &span_index, &type_index);
         content.push_str(&generate_function_typst(&ctx));
     }
 
@@ -101,7 +102,9 @@ fn generate_function_typst(ctx: &FunctionContext) -> String {
 
     // Purpose placeholder
     typ.push_str("#block(fill: luma(250), inset: 12pt, radius: 4pt, width: 100%)[\n");
-    typ.push_str("  *Purpose:* #text(fill: rgb(\"#999999\"))[TODO: Describe why this walkthrough exists]\n");
+    typ.push_str(
+        "  *Purpose:* #text(fill: rgb(\"#999999\"))[TODO: Describe why this walkthrough exists]\n",
+    );
     typ.push_str("]\n\n");
 
     // === Source Context ===
@@ -120,7 +123,10 @@ fn generate_function_typst(ctx: &FunctionContext) -> String {
     typ.push_str(&format!("- *Basic blocks:* {}\n", ctx.body.blocks.len()));
 
     if let Some((_, decl)) = ctx.body.local_decls().next() {
-        typ.push_str(&format!("- *Return type:* `{}`\n", decl.ty));
+        typ.push_str(&format!(
+            "- *Return type:* `{}`\n",
+            ctx.render_type(decl.ty)
+        ));
     }
 
     let prop_list = ctx.property_strings();
@@ -144,7 +150,7 @@ fn generate_function_typst(ctx: &FunctionContext) -> String {
         typ.push_str(&format!(
             "  [`{}`], [`{}`], [{}],\n",
             index,
-            escape_typst_code(&format!("{}", decl.ty)),
+            escape_typst_code(&ctx.render_type(decl.ty)),
             note
         ));
     }
@@ -205,7 +211,9 @@ fn generate_function_typst(ctx: &FunctionContext) -> String {
     // Takeaways placeholder
     typ.push_str("== Takeaways\n\n");
     typ.push_str("#block(fill: luma(250), inset: 12pt, radius: 4pt, width: 100%)[\n");
-    typ.push_str("  #text(fill: rgb(\"#999999\"))[TODO: One or two sentences to generalize this example]\n");
+    typ.push_str(
+        "  #text(fill: rgb(\"#999999\"))[TODO: One or two sentences to generalize this example]\n",
+    );
     typ.push_str("]\n\n");
 
     typ.push_str("#pagebreak()\n\n");

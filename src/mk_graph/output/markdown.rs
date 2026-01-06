@@ -21,7 +21,7 @@ use crate::printer::{collect_smir, SmirJson};
 use crate::render::short_fn_name;
 use crate::MonoItemKind;
 
-use super::traversal::{BlockRole, FunctionContext, SpanIndex};
+use super::traversal::{BlockRole, FunctionContext, SpanIndex, TypeIndex};
 
 /// Entry point to generate Markdown file
 pub fn emit_mdfile(tcx: TyCtxt<'_>) {
@@ -47,8 +47,9 @@ pub fn emit_mdfile(tcx: TyCtxt<'_>) {
 fn generate_markdown(smir: &SmirJson) -> String {
     let mut content = String::new();
 
-    // Build span index for source lookups
+    // Build indices for lookups
     let span_index = SpanIndex::from_spans(&smir.spans);
+    let type_index = TypeIndex::from_types(&smir.types);
 
     // Generate content for each function
     for item in &smir.items {
@@ -64,7 +65,7 @@ fn generate_markdown(smir: &SmirJson) -> String {
         }
 
         let short_name = short_fn_name(name);
-        let ctx = FunctionContext::new(&short_name, name, body, &span_index);
+        let ctx = FunctionContext::new(&short_name, name, body, &span_index, &type_index);
         content.push_str(&generate_function_markdown(&ctx));
     }
 
@@ -100,7 +101,10 @@ fn generate_function_markdown(ctx: &FunctionContext) -> String {
 
     // Return type from _0
     if let Some((_, decl)) = ctx.body.local_decls().next() {
-        md.push_str(&format!("- **Return type:** `{}`\n", decl.ty));
+        md.push_str(&format!(
+            "- **Return type:** `{}`\n",
+            ctx.render_type(decl.ty)
+        ));
     }
 
     // Notable properties
@@ -124,7 +128,7 @@ fn generate_function_markdown(ctx: &FunctionContext) -> String {
         md.push_str(&format!(
             "| `{}` | `{}` | {} |\n",
             index,
-            escape_code_cell(&format!("{}", decl.ty)),
+            escape_code_cell(&ctx.render_type(decl.ty)),
             note
         ));
     }

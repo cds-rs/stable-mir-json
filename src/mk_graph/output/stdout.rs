@@ -11,7 +11,7 @@ use crate::printer::{collect_smir, SmirJson};
 use crate::render::short_fn_name;
 use crate::MonoItemKind;
 
-use super::traversal::{BlockRole, FunctionContext, SpanIndex};
+use super::traversal::{BlockRole, FunctionContext, SpanIndex, TypeIndex};
 
 /// Entry point to emit annotated MIR to stdout
 pub fn emit_stdout(tcx: TyCtxt<'_>) {
@@ -24,8 +24,9 @@ pub fn emit_stdout(tcx: TyCtxt<'_>) {
 fn generate_text(smir: &SmirJson) -> String {
     let mut content = String::new();
 
-    // Build span index for source lookups
+    // Build indices for lookups
     let span_index = SpanIndex::from_spans(&smir.spans);
+    let type_index = TypeIndex::from_types(&smir.types);
 
     // Header
     content.push_str(&format!("=== {} ===\n\n", smir.name));
@@ -44,7 +45,7 @@ fn generate_text(smir: &SmirJson) -> String {
         }
 
         let short_name = short_fn_name(name);
-        let ctx = FunctionContext::new(&short_name, name, body, &span_index);
+        let ctx = FunctionContext::new(&short_name, name, body, &span_index, &type_index);
         content.push_str(&generate_function_text(&ctx));
     }
 
@@ -72,7 +73,7 @@ fn generate_function_text(ctx: &FunctionContext) -> String {
     // Overview
     out.push_str(&format!("│ Blocks: {}  ", ctx.body.blocks.len()));
     if let Some((_, decl)) = ctx.body.local_decls().next() {
-        out.push_str(&format!("Returns: {}\n", decl.ty));
+        out.push_str(&format!("Returns: {}\n", ctx.render_type(decl.ty)));
     } else {
         out.push('\n');
     }
@@ -93,7 +94,13 @@ fn generate_function_text(ctx: &FunctionContext) -> String {
             .and_then(|l| l.source_range.as_ref())
             .map(|r| format!(" [{}]", r.format()))
             .unwrap_or_default();
-        out.push_str(&format!("│   {}: {}{}{}\n", index, decl.ty, note, lifetime_str));
+        out.push_str(&format!(
+            "│   {}: {}{}{}\n",
+            index,
+            ctx.render_type(decl.ty),
+            note,
+            lifetime_str
+        ));
     }
 
     // Borrows with lifetime ranges
@@ -172,7 +179,11 @@ fn render_block_text(
 
     // Statements and terminator
     for row in rows {
-        let prefix = if row.is_terminator { "│   → " } else { "│     " };
+        let prefix = if row.is_terminator {
+            "│   → "
+        } else {
+            "│     "
+        };
         let suffix = if !row.annotation.is_empty() {
             format!("  // {}", row.annotation)
         } else {

@@ -12,7 +12,7 @@ use stable_mir::mir::{
 use stable_mir::ty::IndexedVal;
 
 pub use crate::mk_graph::index::{
-    BorrowIndex, BorrowInfo, BorrowKindInfo, LifetimeIndex, LocalLifetime, SpanIndex,
+    BorrowIndex, BorrowInfo, BorrowKindInfo, LifetimeIndex, LocalLifetime, SpanIndex, TypeIndex,
 };
 // Re-export SpanInfo so output modules can import it from here
 pub use crate::printer::SpanInfo;
@@ -121,9 +121,9 @@ pub fn analyze_function(body: &Body, current_fn: &str) -> FunctionProperties {
             }
             TerminatorKind::SwitchInt { .. } => props.has_switches = true,
             TerminatorKind::Drop { .. } => props.has_drops = true,
-            TerminatorKind::Resume {} | TerminatorKind::Abort {} | TerminatorKind::Unreachable {} => {
-                props.has_panic_path = true
-            }
+            TerminatorKind::Resume {}
+            | TerminatorKind::Abort {}
+            | TerminatorKind::Unreachable {} => props.has_panic_path = true,
             _ => {}
         }
     }
@@ -201,7 +201,9 @@ pub fn infer_block_roles(body: &Body) -> HashMap<usize, BlockRole> {
             TerminatorKind::Return {} => {
                 roles.insert(idx, BlockRole::Return);
             }
-            TerminatorKind::Resume {} | TerminatorKind::Abort {} | TerminatorKind::Unreachable {} => {
+            TerminatorKind::Resume {}
+            | TerminatorKind::Abort {}
+            | TerminatorKind::Unreachable {} => {
                 roles.insert(idx, BlockRole::Panic);
             }
             TerminatorKind::Call { target: None, .. } => {
@@ -364,7 +366,11 @@ pub fn render_terminator_annotated(term: &Terminator, current_fn: &str) -> (Stri
             format!("Jump to bb{target}"),
             false,
         ),
-        TerminatorKind::Return {} => ("return".to_string(), "Return from function".to_string(), false),
+        TerminatorKind::Return {} => (
+            "return".to_string(),
+            "Return from function".to_string(),
+            false,
+        ),
         TerminatorKind::Unreachable {} => (
             "unreachable".to_string(),
             "Unreachable code".to_string(),
@@ -456,7 +462,8 @@ pub fn render_block_rows(block: &BasicBlock, current_fn: &str) -> Vec<AnnotatedR
     }
 
     // Process terminator
-    let (mir, annotation, is_recursive) = render_terminator_annotated(&block.terminator, current_fn);
+    let (mir, annotation, is_recursive) =
+        render_terminator_annotated(&block.terminator, current_fn);
     rows.push(AnnotatedRow {
         mir,
         annotation,
@@ -484,7 +491,12 @@ pub fn generate_ascii_cfg(body: &Body, roles: &HashMap<usize, BlockRole>) -> Str
             lines.push(format!("bb{}{}", idx, role_suffix));
         } else {
             let arrows: Vec<String> = targets.iter().map(|t| format!("bb{}", t)).collect();
-            lines.push(format!("bb{}{} ──▶ {}", idx, role_suffix, arrows.join(", ")));
+            lines.push(format!(
+                "bb{}{} ──▶ {}",
+                idx,
+                role_suffix,
+                arrows.join(", ")
+            ));
         }
     }
 
@@ -556,7 +568,8 @@ pub fn extract_function_source(
             start -= 1;
             break;
         }
-        if line.trim().is_empty() || line.trim().starts_with("//") || line.trim().starts_with("#[") {
+        if line.trim().is_empty() || line.trim().starts_with("//") || line.trim().starts_with("#[")
+        {
             start -= 1;
         } else {
             break;
@@ -627,9 +640,7 @@ fn extract_function_source_from_index(span_index: &SpanIndex, body: &Body) -> Op
             start -= 1;
             break;
         }
-        if line.trim().is_empty()
-            || line.trim().starts_with("//")
-            || line.trim().starts_with("#[")
+        if line.trim().is_empty() || line.trim().starts_with("//") || line.trim().starts_with("#[")
         {
             start -= 1;
         } else {
@@ -727,7 +738,9 @@ pub fn generate_typst_cfg(body: &Body, roles: &HashMap<usize, BlockRole>) -> Str
                 to_x - from_layout.x - 5.0,
                 to_y - from_y
             ));
-            typ.push_str("    stroke: (paint: rgb(\"#666666\"), thickness: 1pt, dash: \"dashed\"),\n");
+            typ.push_str(
+                "    stroke: (paint: rgb(\"#666666\"), thickness: 1pt, dash: \"dashed\"),\n",
+            );
             typ.push_str("  ))\n");
         } else {
             // Draw straight or angled edge
@@ -842,7 +855,8 @@ fn compute_cfg_layout(
 
     for (level, blocks) in level_blocks.iter().enumerate() {
         let count = blocks.len();
-        let total_width = count as f32 * box_width + (count.saturating_sub(1)) as f32 * (h_spacing - box_width);
+        let total_width =
+            count as f32 * box_width + (count.saturating_sub(1)) as f32 * (h_spacing - box_width);
         let start_x = (200.0 - total_width) / 2.0; // Center around 200pt
 
         for (i, &idx) in blocks.iter().enumerate() {
@@ -867,13 +881,13 @@ fn compute_cfg_layout(
 /// Get fill and stroke colors for a block based on its role
 fn block_colors(role: BlockRole) -> (&'static str, &'static str) {
     match role {
-        BlockRole::Entry => ("#e8f5e9", "#4caf50"),    // Green
-        BlockRole::Return => ("#e3f2fd", "#2196f3"),   // Blue
-        BlockRole::Panic => ("#ffebee", "#f44336"),    // Red
-        BlockRole::Cleanup => ("#fff3e0", "#ff9800"),  // Orange
-        BlockRole::Branch => ("#f3e5f5", "#9c27b0"),   // Purple
-        BlockRole::Loop => ("#fff8e1", "#ffc107"),     // Amber
-        BlockRole::Normal => ("#fafafa", "#9e9e9e"),   // Gray
+        BlockRole::Entry => ("#e8f5e9", "#4caf50"),   // Green
+        BlockRole::Return => ("#e3f2fd", "#2196f3"),  // Blue
+        BlockRole::Panic => ("#ffebee", "#f44336"),   // Red
+        BlockRole::Cleanup => ("#fff3e0", "#ff9800"), // Orange
+        BlockRole::Branch => ("#f3e5f5", "#9c27b0"),  // Purple
+        BlockRole::Loop => ("#fff8e1", "#ffc107"),    // Amber
+        BlockRole::Normal => ("#fafafa", "#9e9e9e"),  // Gray
     }
 }
 
@@ -892,6 +906,7 @@ pub struct FunctionContext<'a> {
     pub borrow_index: BorrowIndex,
     pub lifetime_index: LifetimeIndex,
     pub span_index: &'a SpanIndex,
+    pub type_index: &'a TypeIndex,
 }
 
 impl<'a> FunctionContext<'a> {
@@ -901,6 +916,7 @@ impl<'a> FunctionContext<'a> {
         full_name: &'a str,
         body: &'a Body,
         span_index: &'a SpanIndex,
+        type_index: &'a TypeIndex,
     ) -> Self {
         let properties = analyze_function(body, short_name);
         let block_roles = infer_block_roles(body);
@@ -918,12 +934,25 @@ impl<'a> FunctionContext<'a> {
             borrow_index,
             lifetime_index,
             span_index,
+            type_index,
+        }
+    }
+
+    /// Render a type with layout information (size and alignment)
+    pub fn render_type(&self, ty: stable_mir::ty::Ty) -> String {
+        let name = self.type_index.get_name(ty);
+        match self.type_index.get_layout(ty) {
+            Some(layout) => format!("{} ({} bytes, align {})", name, layout.size, layout.align),
+            None => name,
         }
     }
 
     /// Get the role of a block
     pub fn block_role(&self, idx: usize) -> BlockRole {
-        self.block_roles.get(&idx).copied().unwrap_or(BlockRole::Normal)
+        self.block_roles
+            .get(&idx)
+            .copied()
+            .unwrap_or(BlockRole::Normal)
     }
 
     /// Render a block to annotated rows
