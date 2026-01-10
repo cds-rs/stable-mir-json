@@ -66,6 +66,43 @@ fn render_mermaid_function(
     ctx: &GraphContext,
     out: &mut String,
 ) {
+    let fn_id = short_name(name);
+    let display_name = escape_mermaid(&name_lines(name));
+
+    // Function subgraph container
+    out.push_str(&format!("    subgraph {}[\"{}\"]\n", fn_id, display_name));
+    out.push_str("        direction TD\n");
+
+    if let Some(body) = body {
+        render_mermaid_blocks(body, ctx, out);
+        render_mermaid_block_edges(body, out);
+    } else {
+        out.push_str("        empty[\"<empty body>\"]\n");
+    }
+
+    out.push_str("    end\n");
+    out.push_str(&format!("    style {} fill:#e0e0ff,stroke:#333\n\n", fn_id));
+
+    // Call edges (must be outside the subgraph)
+    if let Some(body) = body {
+        render_mermaid_call_edges(&fn_id, body, ctx, out);
+    }
+}
+
+fn render_mermaid_blocks(body: &stable_mir::mir::Body, ctx: &GraphContext, out: &mut String) {
+    // stub
+}
+
+fn render_mermaid_block_edges(body: &stable_mir::mir::Body, out: &mut String) {
+    // stub
+}
+
+fn render_mermaid_call_edges(
+    fn_id: &str,
+    body: &stable_mir::mir::Body,
+    ctx: &GraphContext,
+    out: &mut String,
+) {
     // stub
 }
 

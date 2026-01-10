@@ -141,11 +141,10 @@ pub fn escape_d2(s: &str) -> String {
 
 /// Escape special characters for Mermaid string labels
 pub fn escape_mermaid(s: &str) -> String {
-    s.replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
-        .replace('#', "&num;")
+    s.replace('\\', "\\\\")
+        .replace('"', "\\\"")
+        .replace('\n', "<br/>")
+        .replace('$', "\\$")
 }
 
 /// Convert byte slice to u64, little-endian (least significant byte first)
