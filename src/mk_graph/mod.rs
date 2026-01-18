@@ -72,6 +72,10 @@ pub fn emit_d2file(tcx: TyCtxt<'_>) {
     emit_graph_file(tcx, "smir.d2", |s| s.to_d2_file());
 }
 
+/// Emit MIR as a Mermaid diagram file
+pub fn emit_mermaid(tcx: TyCtxt<'_>) {
+    emit_graph_file(tcx, "smir.mermaid", |s| s.to_mermaid_file());
+}
 // Re-export document format entry points
 pub use output::markdown::emit_mdfile;
 pub use output::stdout::emit_stdout;
