@@ -83,14 +83,17 @@ fn render_mermaid_function(
     // Function subgraph container
     out.push_str(&format!("    subgraph {}[\" \"]\n", fn_id));
     out.push_str(&format!("        {}_label[\"{}\"]\n", fn_id, display_name));
-    out.push_str(&format!("        {}_label --> {}_bb0\n", fn_id, fn_id));
     out.push_str(&format!("        style {}_label fill:#e0ffe0,stroke:#333\n", fn_id));
 
     if let Some(body) = body {
+        if !body.blocks.is_empty() {
+            out.push_str(&format!("        {}_label --> {}_bb0\n", fn_id, fn_id));
+        }
         render_mermaid_blocks(&fn_id, body, ctx, out);
         render_mermaid_block_edges(&fn_id, body, out);
     } else {
         out.push_str("        empty[\"<empty body>\"]\n");
+        out.push_str(&format!("        {}_label --> empty\n", fn_id));
     }
 
     out.push_str("    end\n");
