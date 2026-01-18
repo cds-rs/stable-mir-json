@@ -8,7 +8,7 @@ use crate::printer::SmirJson;
 use crate::MonoItemKind;
 
 use crate::mk_graph::context::GraphContext;
-use crate::mk_graph::util::{escape_mermaid, is_unqualified, name_lines, short_name, terminator_targets};
+use crate::mk_graph::util::{escape_mermaid, is_unqualified, name_lines, short_name, terminator_targets, hash_body};
 
 impl SmirJson<'_> {
     /// Convert the MIR to Mermaid diagram format
@@ -67,7 +67,17 @@ fn render_mermaid_function(
     ctx: &GraphContext,
     out: &mut String,
 ) {
-    let fn_id = short_name(name);
+    let fn_id = match body {
+        Some(body) => {
+            let h = hash_body(body);
+            format!("fn_{}_{}", short_name(name), h)
+        }
+        None => {
+            // Stable fallback for body-less functions
+            format!("fn_{}_no_body", short_name(name))
+        }
+    };
+
     let display_name = escape_mermaid(&name_lines(name));
 
     // Function subgraph container

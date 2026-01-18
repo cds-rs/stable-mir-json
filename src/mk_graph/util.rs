@@ -109,6 +109,31 @@ pub fn block_name(function_name: &str, id: usize) -> String {
     format!("{}_{}", short_name(function_name), id)
 }
 
+/// Generate a consistent short hash for a MIR body
+pub fn hash_body(body: &stable_mir::mir::Body) -> u64 {
+    let mut h = DefaultHasher::new();
+
+    // Hash number of blocks
+    body.blocks.len().hash(&mut h);
+
+    for (idx, block) in body.blocks.iter().enumerate() {
+        idx.hash(&mut h);
+
+        // Hash terminator kind
+        std::mem::discriminant(&block.terminator.kind).hash(&mut h);
+
+        // Hash control-flow edges
+        for target in terminator_targets(&block.terminator) {
+            target.hash(&mut h);
+        }
+
+        // Statement count for entropy
+        block.statements.len().hash(&mut h);
+    }
+
+    h.finish()
+}
+
 /// Convert a function symbol type to a display string
 pub fn function_string(f: FnSymType) -> String {
     match f {
