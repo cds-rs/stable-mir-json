@@ -30,7 +30,7 @@ lint:
 # Clean build artifacts
 clean:
     cargo clean
-    rm -rf output-html output-dot output-d2 output-md output-typst
+    rm -rf output-html output-dot output-d2 output-md output-typst output-mermaid
 
 # Test programs directory
 test_dir := "tests/integration/programs"
@@ -185,8 +185,32 @@ typst-pdf file:
     typst compile "output-typst/${name}.smir.typ" "output-typst/${name}.smir.pdf"
     echo "Generated: output-typst/${name}.smir.pdf"
 
+# Generate Mermaid output for all test programs
+mermaid:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p output-mermaid
+    for rust in {{test_dir}}/*.rs; do
+        name=$(basename "${rust%.rs}")
+        echo "Generating Mermaid for $name..."
+        cargo run -- --mermaid -Zno-codegen --out-dir output-mermaid "$rust" 2>/dev/null || true
+        if [ -f "output-mermaid/${name}.smir.mmd" ]; then
+            echo "  -> output-mermaid/${name}.smir.mmd"
+        fi
+    done
+    echo "Done. Mermaid files in output-mermaid/"
+
+# Generate Mermaid for a single file
+mermaid-file file:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p output-mermaid
+    name=$(basename "{{file}}" .rs)
+    cargo run -- --mermaid -Zno-codegen --out-dir output-mermaid "{{file}}"
+    echo "Generated: output-mermaid/${name}.smir.mmd"
+
 # Generate all output formats
-all: html dot svg d2 md typst
+all: html dot svg d2 md typst mermaid
 
 # Show annotated MIR for a file in the terminal
 show file:

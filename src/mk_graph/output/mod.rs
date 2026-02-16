@@ -6,3 +6,4 @@ pub mod markdown;
 pub mod stdout;
 pub mod traversal;
 pub mod typst;
+pub mod mermaid;
