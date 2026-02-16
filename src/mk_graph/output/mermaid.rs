@@ -181,7 +181,11 @@ fn render_mermaid_call_edges(
 
 fn render_mermaid_asm(asm: &str, out: &mut String) {
     let asm_id = short_name(asm);
-    let asm_text = escape_mermaid(&asm.lines().collect::<String>());
+    let asm_text = asm
+        .lines()
+        .map(|line| escape_mermaid(line))
+        .collect::<Vec<_>>()
+        .join("<br/>");
     out.push_str(&format!("    {}[\"{}\"]\n", asm_id, asm_text));
     out.push_str(&format!("    style {} fill:#ffe0ff,stroke:#333\n\n", asm_id));
 }
