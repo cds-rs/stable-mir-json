@@ -8,7 +8,7 @@ use crate::printer::SmirJson;
 use crate::MonoItemKind;
 
 use crate::mk_graph::context::GraphContext;
-use crate::mk_graph::util::{escape_mermaid, is_unqualified, name_lines, short_name, terminator_targets, hash_body};
+use crate::mk_graph::util::{escape_mermaid, is_unqualified, short_name, terminator_targets, hash_body};
 
 impl SmirJson<'_> {
     /// Convert the MIR to Mermaid diagram format
